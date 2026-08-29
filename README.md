@@ -1,13 +1,87 @@
 # PantryPilot
 
-PantryPilot turns ingredients already in your kitchen into a cooked dinner.
+PantryPilot turns ingredients already in your kitchen into a cooked dinner — with a WebMCP agent that can plan, adapt and guide every visible step.
 
-Built for the WebMCP Hackathon.
+## The golden demo
 
-## Product promise
+Start with eggs, tomatoes and rice, then ask:
 
-Plan, adapt, shop, and cook a meal with a transparent agent that performs visible actions on the page.
+> Plan a vegetarian dinner for two in under 25 minutes. Use my tomatoes first, replace dairy with a vegan option, add anything missing, then start cooking.
 
-## Status
+PantryPilot selects **Golden tomato rice**, swaps whole milk for oat milk, prepares a human-reviewed shopping list and opens a persistent step-by-step cooking session. The timer survives reloads. Shopping never crosses the final human-confirmation boundary.
 
-Initial project setup. Product development starts after the core demo flow and visual direction are locked.
+## What is complete
+
+- A responsive pantry → plan → shop → cook product flow
+- Six curated, deterministic recipes with ingredient matching and dietary filters
+- Portion scaling, safe substitutions and deduplicated missing-ingredient calculation
+- Human-in-the-loop shopping review and a deliberately non-transactional checkout boundary
+- Full-screen cooking mode with resumable progress and absolute-time timers
+- Local persistence for pantry, plan, list, cooking session and timers
+- Ten real WebMCP tools registered through `document.modelContext`
+- A manual/in-app agent fallback when WebMCP is not available
+- Original food photography and hand-painted culinary decals generated for PantryPilot
+- Unit, state and WebMCP contract tests plus a production build
+
+## WebMCP tool belt
+
+| Tool | Purpose | Read-only |
+| --- | --- | --- |
+| `get_kitchen_state` | Read pantry, preferences, plan, list, cooking progress and timers | Yes |
+| `plan_dinner` | Select the best recipe for pantry and constraints | No |
+| `select_dinner` | Choose a named recipe | No |
+| `adjust_servings` | Scale the active recipe from 1–8 servings | No |
+| `replace_ingredient` | Apply a known, visible substitution | No |
+| `add_missing_to_shopping_list` | Open the human shopping-review sheet | No |
+| `prepare_grocery_checkout` | Open the final local review; never purchases | No |
+| `start_cooking_mode` | Start the guided cooking session | No |
+| `advance_cooking_step` | Complete the visible cooking step | No |
+| `set_cooking_timer` | Start a named, persistent timer | No |
+
+All tools use the same Zustand domain commands as the human UI. Inputs are validated with Zod, outputs are compact JSON-safe objects, and registration is cleaned up with `AbortController`. PantryPilot uses progressive enhancement: the product remains fully usable without WebMCP.
+
+## Run locally
+
+Requirements: Node.js 20 or newer.
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://127.0.0.1:4173](http://127.0.0.1:4173).
+
+For local WebMCP testing in a compatible Chrome build:
+
+1. Open `chrome://flags/#enable-webmcp-testing`.
+2. Enable the flag and relaunch Chrome.
+3. Open PantryPilot on localhost and inspect the **WebMCP live** tool belt.
+
+The current deployed origin-trial requirements and browser support are documented by [Chrome for Developers](https://developer.chrome.com/docs/ai/webmcp/) and the [WebMCP specification](https://webmachinelearning.github.io/webmcp/).
+
+## Quality checks
+
+```bash
+npm test
+npm run build
+```
+
+The tests cover ingredient aliases, deterministic recipe ranking, scaling, substitutions-before-shopping, shopping deduplication, cooking snapshots, timer reconciliation and WebMCP schemas/validation.
+
+## Architecture
+
+```text
+src/
+  components/       Product surfaces, dialogs and cooking mode
+  data/             Curated recipes, ingredients and substitutions
+  domain/           Pure meal matching/scaling/missing-item logic
+  store/            Persisted shared Zustand state and commands
+  webmcp/           Tool schemas, validation and registration
+  test/             Browser-independent test setup
+```
+
+No backend, account, external recipe API, retailer integration or payment provider is required for the demo path. That keeps the experience fast, reproducible and safe for judging.
+
+## License
+
+[MIT](LICENSE) © 2026 ViniweiReal.
