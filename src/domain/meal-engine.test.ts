@@ -23,6 +23,18 @@ describe('meal engine', () => {
     expect(pantry.map((item) => item.ingredientId)).toEqual(['egg', 'tomato', 'rice']);
   });
 
+  it('recognizes the expanded fresh ingredient shelf in English and German', () => {
+    const pantry = createPantryItems(['Knoblauch', 'baby spinach', 'Pilze', 'rote paprika', 'Kartoffeln', 'Naturtofu']);
+    expect(pantry.map((item) => item.ingredientId)).toEqual([
+      'garlic',
+      'spinach',
+      'mushroom',
+      'bell-pepper',
+      'potato',
+      'tofu',
+    ]);
+  });
+
   it('deterministically selects the signature dinner for the golden pantry', () => {
     const matches = rankRecipes(createPantryItems(['eggs', 'tomatoes', 'rice']), preferences);
     expect(matches[0].recipe.id).toBe('golden-tomato-rice');

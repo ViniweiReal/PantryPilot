@@ -674,15 +674,36 @@ a {
   background: linear-gradient(90deg, rgba(248, 222, 214, 0.7), rgba(255, 253, 248, 0.55));
 }
 
-.ingredient-emoji {
+.ingredient-photo {
   display: grid;
-  width: 31px;
-  height: 31px;
+  flex: 0 0 auto;
   place-items: center;
-  font-size: 17px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: inset 0 0 0 1px rgba(34, 32, 25, 0.05);
+  overflow: hidden;
+  color: var(--aubergine);
+  font-size: 12px;
+  font-weight: 700;
+  background-color: rgba(255, 255, 255, 0.8);
+  background-image: url('/images/ingredient-atlas.webp');
+  background-repeat: no-repeat;
+  background-position: var(--ingredient-position, center);
+  background-size: 400% 300%;
+  box-shadow: inset 0 0 0 1px rgba(34, 32, 25, 0.06), 0 3px 9px rgba(67, 48, 29, 0.08);
+}
+
+.ingredient-photo--compact {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.ingredient-photo--shelf {
+  width: 42px;
+  height: 38px;
+  border-radius: 10px;
+}
+
+.ingredient-photo--fallback {
+  background-image: linear-gradient(145deg, var(--cream-deep), #fff);
 }
 
 .pantry-item__name {
@@ -746,15 +767,18 @@ li:hover > .icon-button--quiet,
   opacity: 1;
 }
 
-.suggestions-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 5px;
-  margin-top: 13px;
+.ingredient-shelf {
+  margin-top: 16px;
 }
 
-.suggestions-row span {
+.ingredient-shelf__heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.ingredient-shelf__heading span {
   color: var(--muted);
   font-size: 8px;
   font-weight: 700;
@@ -762,14 +786,49 @@ li:hover > .icon-button--quiet,
   text-transform: uppercase;
 }
 
-.suggestions-row button {
-  padding: 5px 7px;
-  color: var(--basil);
+.ingredient-shelf__heading small {
+  color: #999387;
+  font-size: 8px;
+}
+
+.ingredient-shelf__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.ingredient-shelf__grid button {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 42px minmax(0, 1fr) 12px;
+  align-items: center;
+  gap: 7px;
+  padding: 4px;
+  color: var(--ink);
   font-size: 9px;
   font-weight: 600;
-  border: 1px dashed rgba(53, 107, 69, 0.3);
-  border-radius: 7px;
-  background: transparent;
+  text-align: left;
+  border: 1px solid rgba(34, 32, 25, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.68);
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.ingredient-shelf__grid button:hover,
+.ingredient-shelf__grid button:focus-visible {
+  border-color: rgba(53, 107, 69, 0.3);
+  box-shadow: 0 7px 16px rgba(58, 42, 25, 0.08);
+  transform: translateY(-1px);
+}
+
+.ingredient-shelf__grid button > span:not(.ingredient-photo) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ingredient-shelf__grid button > svg {
+  color: var(--basil);
 }
 
 .divider {

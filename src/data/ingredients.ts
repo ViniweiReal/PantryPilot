@@ -20,6 +20,12 @@ export const INGREDIENTS: IngredientDefinition[] = [
   { id: 'lemon', name: 'Lemon', aliases: ['lemon', 'zitrone'], category: 'produce', vegan: true },
   { id: 'flatbread', name: 'Flatbread', aliases: ['flatbread', 'bread', 'fladenbrot', 'brot'], category: 'grain', vegan: true },
   { id: 'feta', name: 'Feta', aliases: ['feta', 'cheese', 'käse'], category: 'dairy', vegan: false },
+  { id: 'garlic', name: 'Garlic', aliases: ['garlic', 'garlic clove', 'knoblauch', 'knoblauchzehe'], category: 'produce', vegan: true },
+  { id: 'spinach', name: 'Spinach', aliases: ['spinach', 'baby spinach', 'spinat', 'babyspinat'], category: 'produce', vegan: true },
+  { id: 'mushroom', name: 'Mushrooms', aliases: ['mushroom', 'mushrooms', 'champignon', 'champignons', 'pilz', 'pilze'], category: 'produce', vegan: true },
+  { id: 'bell-pepper', name: 'Bell pepper', aliases: ['bell pepper', 'red pepper', 'paprika', 'rote paprika'], category: 'produce', vegan: true },
+  { id: 'potato', name: 'Potatoes', aliases: ['potato', 'potatoes', 'kartoffel', 'kartoffeln'], category: 'produce', vegan: true },
+  { id: 'tofu', name: 'Tofu', aliases: ['tofu', 'firm tofu', 'naturtofu'], category: 'protein', vegan: true },
 ];
 
 export const SUBSTITUTIONS: Record<string, Substitution[]> = {

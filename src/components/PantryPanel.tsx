@@ -1,10 +1,10 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Clock3, Minus, Plus, Search, Sparkles, X } from 'lucide-react';
+import { INGREDIENTS } from '../data/ingredients';
 import { usePantryStore } from '../store/usePantryStore';
+import { IngredientPhoto } from './IngredientPhoto';
 
-const ingredientEmoji: Record<string, string> = {
-  egg: '🥚', tomato: '🍅', rice: '🍚', basil: '🌿', chickpea: '🫛', 'oat-milk': '🥛', 'whole-milk': '🥛', 'red-onion': '🧅', lemon: '🍋', feta: '🧀',
-};
+const SHELF_INGREDIENT_IDS = ['basil', 'chickpea', 'lemon', 'garlic', 'spinach', 'mushroom', 'bell-pepper', 'potato', 'tofu'];
 
 export function PantryPanel() {
   const pantry = usePantryStore((state) => state.pantry);
@@ -17,9 +17,10 @@ export function PantryPanel() {
   const [ingredient, setIngredient] = useState('');
   const [inlineError, setInlineError] = useState('');
 
-  const suggestions = useMemo(() => ['Basil', 'Chickpeas', 'Lemon'].filter((name) =>
-    !pantry.some((item) => item.name.toLocaleLowerCase() === name.toLocaleLowerCase()),
-  ), [pantry]);
+  const suggestions = useMemo(() => SHELF_INGREDIENT_IDS
+    .map((id) => INGREDIENTS.find((candidate) => candidate.id === id))
+    .filter((candidate) => candidate && !pantry.some((item) => item.ingredientId === candidate.id))
+    .slice(0, 6), [pantry]);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -42,15 +43,18 @@ export function PantryPanel() {
 
       <form className="pantry-add" onSubmit={submit}>
         <Search size={17} aria-hidden="true" />
-        <input aria-label="Add an ingredient" value={ingredient} onChange={(event) => setIngredient(event.target.value)} placeholder="Add an ingredient" />
+        <input aria-label="Add an ingredient" list="ingredient-options" value={ingredient} onChange={(event) => setIngredient(event.target.value)} placeholder="Add an ingredient" />
         <button type="submit" aria-label="Add ingredient" disabled={!ingredient.trim()}><Plus size={17} /></button>
       </form>
+      <datalist id="ingredient-options">
+        {INGREDIENTS.map((option) => <option key={option.id} value={option.name} />)}
+      </datalist>
       {inlineError && <p className="inline-error" role="alert">{inlineError}</p>}
 
       <ul className="pantry-list">
         {pantry.map((item) => (
           <li key={item.id} className={item.useSoon ? 'pantry-item pantry-item--soon' : 'pantry-item'}>
-            <span className="ingredient-emoji" aria-hidden="true">{ingredientEmoji[item.ingredientId] ?? '✦'}</span>
+            <IngredientPhoto ingredientId={item.ingredientId} />
             <span className="pantry-item__name">{item.name}{item.amount && <small>{item.amount} {item.unit}</small>}</span>
             <button
               className="soon-toggle"
@@ -67,7 +71,18 @@ export function PantryPanel() {
       </ul>
 
       {suggestions.length > 0 && (
-        <div className="suggestions-row"><span>Quick add</span>{suggestions.map((name) => <button key={name} type="button" onClick={() => addPantryItem(name)}>+ {name}</button>)}</div>
+        <div className="ingredient-shelf">
+          <div className="ingredient-shelf__heading"><span>Quick add</span><small>Tap an ingredient</small></div>
+          <div className="ingredient-shelf__grid">
+            {suggestions.map((suggestion) => suggestion && (
+              <button key={suggestion.id} type="button" onClick={() => addPantryItem(suggestion.name)}>
+                <IngredientPhoto ingredientId={suggestion.id} size="shelf" />
+                <span>{suggestion.name}</span>
+                <Plus size={12} aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
       <div className="divider" />
