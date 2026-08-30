@@ -101,26 +101,62 @@ function throwIfAborted(signal: AbortSignal) {
   if (signal.aborted) throw new DOMException('Tool execution was cancelled.', 'AbortError');
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null ? value as Record<string, unknown> : null;
+}
+
+function compactJson(value: unknown, maximum = 150) {
+  const serialized = JSON.stringify(value ?? {});
+  return serialized.length <= maximum ? serialized : `${serialized.slice(0, maximum - 1)}…`;
+}
+
+function summarizeInput(input: unknown) {
+  const record = asRecord(input);
+  return record && Object.keys(record).length > 0 ? compactJson(record) : 'No arguments';
+}
+
+function summarizeOutput(output: unknown) {
+  const record = asRecord(output);
+  const message = typeof record?.message === 'string' ? record.message : 'Tool finished.';
+  const data = asRecord(record?.data);
+  return data?.confirmationRequired === true ? `Waiting for your approval · ${message}` : message;
+}
+
+function traceStatus(output: unknown) {
+  const record = asRecord(output);
+  const data = asRecord(record?.data);
+  if (record?.ok !== true) return 'error' as const;
+  if (data?.confirmationRequired === true) return 'needs-user' as const;
+  return 'success' as const;
+}
+
 function tool<T extends z.ZodType<Record<string, unknown>>>(
   definition: Omit<WebMCP.ModelContextTool, 'execute'>,
   schema: T,
-  execute: (input: z.infer<T>) => unknown,
+  execute: (input: z.infer<T>) => unknown | Promise<unknown>,
 ): WebMCP.ModelContextTool {
   return {
     ...definition,
     execute: async (input, options) => {
+      const traceId = usePantryStore.getState().startToolTrace(definition.name, summarizeInput(input));
       // Some Chrome origin-trial builds still omit the callback options object.
       // Keep cancellation support where present while remaining trial-compatible.
       const signal = options?.signal ?? new AbortController().signal;
       try {
         throwIfAborted(signal);
         const parsed = schema.parse(input);
-        const output = execute(parsed);
+        const output = await execute(parsed);
         throwIfAborted(signal);
+        usePantryStore.getState().finishToolTrace(traceId, traceStatus(output), summarizeOutput(output));
         return output;
       } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') throw error;
-        return errorResult(definition.name, error);
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          usePantryStore.getState().finishToolTrace(traceId, 'error', 'Tool execution was cancelled.');
+          throw error;
+        }
+        const output = errorResult(definition.name, error);
+        usePantryStore.getState().finishToolTrace(traceId, 'error', summarizeOutput(output));
+        return output;
       }
     },
   };

@@ -117,6 +117,19 @@ export interface ActivityEvent {
   createdAt: number;
 }
 
+export type ToolTraceStatus = 'running' | 'success' | 'needs-user' | 'error';
+
+export interface ToolTraceEvent {
+  id: string;
+  toolName: string;
+  inputSummary: string;
+  resultSummary?: string;
+  status: ToolTraceStatus;
+  startedAt: number;
+  completedAt?: number;
+  durationMs?: number;
+}
+
 export interface PendingShoppingReview {
   items: ShoppingItem[];
   source: 'you' | 'agent';

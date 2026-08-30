@@ -15,7 +15,7 @@ import { formatAmount } from '../domain/meal-engine';
 import { TOOL_CATALOG } from '../webmcp/tools';
 import { usePantryStore } from '../store/usePantryStore';
 
-function OverlayShell({ titleId, onClose, children, className = '' }: { titleId: string; onClose: () => void; children: React.ReactNode; className?: string }) {
+export function OverlayShell({ titleId, onClose, children, className = '' }: { titleId: string; onClose: () => void; children: React.ReactNode; className?: string }) {
   const closeButton = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {

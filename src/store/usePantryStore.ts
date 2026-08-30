@@ -20,6 +20,8 @@ import type {
   PantryItem,
   PendingShoppingReview,
   ShoppingItem,
+  ToolTraceEvent,
+  ToolTraceStatus,
   ToastMessage,
 } from '../domain/types';
 
@@ -43,6 +45,7 @@ interface PantryPilotState {
   cookingSession: CookingSession | null;
   timers: Record<string, CookingTimer>;
   activity: ActivityEvent[];
+  toolTrace: ToolTraceEvent[];
   view: AppView;
   pendingShoppingReview: PendingShoppingReview | null;
   checkoutOpen: boolean;
@@ -53,6 +56,10 @@ interface PantryPilotState {
   setAgentRunning: (running: boolean) => void;
   setView: (view: AppView) => void;
   setPreferences: (patch: Partial<MealPreferences>) => void;
+  startToolTrace: (toolName: string, inputSummary: string) => string;
+  finishToolTrace: (id: string, status: ToolTraceStatus, resultSummary: string) => void;
+  resolveToolTrace: (toolName: string, status: ToolTraceStatus, resultSummary: string) => void;
+  clearToolTrace: () => void;
   addPantryItem: (query: string, source?: 'you' | 'agent') => { ok: boolean; message: string };
   removePantryItem: (id: string) => void;
   toggleUseSoon: (id: string) => void;
@@ -134,6 +141,7 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
   cookingSession: null,
   timers: {},
   activity: welcomeActivity(),
+  toolTrace: [],
   view: 'planner',
   pendingShoppingReview: null,
   checkoutOpen: false,
@@ -144,6 +152,50 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
   setWebMcpStatus: (webMcpStatus) => set({ webMcpStatus }),
   setAgentRunning: (isAgentRunning) => set({ isAgentRunning }),
   setView: (view) => set({ view }),
+
+  startToolTrace: (toolName, inputSummary) => {
+    const id = uid('trace');
+    const event: ToolTraceEvent = {
+      id,
+      toolName,
+      inputSummary,
+      status: 'running',
+      startedAt: Date.now(),
+    };
+    set((state) => ({ toolTrace: [event, ...state.toolTrace].slice(0, 20) }));
+    return id;
+  },
+
+  finishToolTrace: (id, status, resultSummary) => set((state) => ({
+    toolTrace: state.toolTrace.map((event) => {
+      if (event.id !== id) return event;
+      const completedAt = Date.now();
+      return {
+        ...event,
+        status,
+        resultSummary,
+        completedAt,
+        durationMs: Math.max(1, completedAt - event.startedAt),
+      };
+    }),
+  })),
+
+  resolveToolTrace: (toolName, status, resultSummary) => set((state) => {
+    const target = state.toolTrace.find((event) => event.toolName === toolName && event.status === 'needs-user');
+    if (!target) return state;
+    const completedAt = Date.now();
+    return {
+      toolTrace: state.toolTrace.map((event) => event.id === target.id ? {
+        ...event,
+        status,
+        resultSummary,
+        completedAt,
+        durationMs: Math.max(1, completedAt - event.startedAt),
+      } : event),
+    };
+  }),
+
+  clearToolTrace: () => set({ toolTrace: [] }),
 
   setPreferences: (patch) => set((state) => ({
     preferences: {
@@ -296,7 +348,8 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
   },
 
   confirmShoppingList: () => {
-    const continueToCooking = get().pendingShoppingReview?.continueToCooking;
+    const pendingReview = get().pendingShoppingReview;
+    const continueToCooking = pendingReview?.continueToCooking;
     set((state) => {
     const review = state.pendingShoppingReview;
     if (!review) return state;
@@ -323,10 +376,16 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
       revision: state.revision + 1,
       };
     });
+    if (pendingReview) {
+      get().resolveToolTrace('add_missing_to_shopping_list', 'success', `User approved ${pendingReview.items.length} items.`);
+    }
     if (continueToCooking) window.setTimeout(() => get().startCooking('agent'), 280);
   },
 
-  cancelShoppingReview: () => set({ pendingShoppingReview: null }),
+  cancelShoppingReview: () => {
+    get().resolveToolTrace('add_missing_to_shopping_list', 'error', 'User chose not to update the shopping list.');
+    set({ pendingShoppingReview: null });
+  },
 
   toggleShoppingItem: (id) => set((state) => ({
     shoppingItems: state.shoppingItems.map((item) => item.id === id ? { ...item, checked: !item.checked } : item),
@@ -352,13 +411,19 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
     return { ok: true, message: 'The grocery review is open. Only the user can confirm it.' };
   },
 
-  closeCheckout: () => set({ checkoutOpen: false }),
+  closeCheckout: () => {
+    get().resolveToolTrace('prepare_grocery_checkout', 'error', 'User returned to editing the list.');
+    set({ checkoutOpen: false });
+  },
 
-  confirmCheckout: () => set((state) => ({
-    checkoutOpen: false,
-    toast: toast('List marked ready', 'Demo only — no order or payment was placed.'),
-    activity: pushActivity(state.activity, activity('Shopping list marked ready', 'No purchase was made.', 'you', 'list')),
-  })),
+  confirmCheckout: () => {
+    get().resolveToolTrace('prepare_grocery_checkout', 'success', 'User marked the local list ready. No purchase was made.');
+    set((state) => ({
+      checkoutOpen: false,
+      toast: toast('List marked ready', 'Demo only — no order or payment was placed.'),
+      activity: pushActivity(state.activity, activity('Shopping list marked ready', 'No purchase was made.', 'you', 'list')),
+    }));
+  },
 
   startCooking: (source = 'you') => {
     const plan = get().plan;
@@ -507,6 +572,7 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
     cookingSession: null,
     timers: {},
     activity: welcomeActivity(),
+    toolTrace: [],
     view: 'planner',
     pendingShoppingReview: null,
     checkoutOpen: false,
@@ -525,6 +591,7 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
     cookingSession: state.cookingSession,
     timers: state.timers,
     activity: state.activity,
+    toolTrace: state.toolTrace,
     view: state.view,
   }),
 }));

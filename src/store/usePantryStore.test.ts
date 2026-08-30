@@ -41,4 +41,15 @@ describe('PantryPilot store', () => {
     usePantryStore.getState().reconcileTimers();
     expect(usePantryStore.getState().revision).toBe(revision);
   });
+
+  it('keeps only the latest 20 tool trace events', () => {
+    for (let index = 0; index < 25; index += 1) {
+      usePantryStore.getState().startToolTrace(`tool_${index}`, '{}');
+    }
+
+    const trace = usePantryStore.getState().toolTrace;
+    expect(trace).toHaveLength(20);
+    expect(trace[0].toolName).toBe('tool_24');
+    expect(trace.at(-1)?.toolName).toBe('tool_5');
+  });
 });

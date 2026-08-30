@@ -2,6 +2,12 @@
 
 PantryPilot turns ingredients already in your kitchen into a cooked dinner — with a WebMCP agent that can plan, adapt and guide every visible step.
 
+## Live demo
+
+**[Open PantryPilot with the jury demo guide](https://viniweireal.github.io/PantryPilot/?demo=1)**
+
+No sign-in is required. In a WebMCP-capable browser, open the guide, choose **Prepare demo**, copy the Golden Prompt and watch each tool call appear in the live Agent Trace. PantryPilot pauses before changing the shopping list and waits for an explicit human decision.
+
 ## The golden demo
 
 Start with eggs, tomatoes and rice, then ask:
@@ -19,6 +25,8 @@ PantryPilot selects **Golden tomato rice**, swaps whole milk for oat milk, prepa
 - Full-screen cooking mode with resumable progress and absolute-time timers
 - Local persistence for pantry, plan, list, cooking session and timers
 - Ten real WebMCP tools registered through `document.modelContext`
+- A persistent Agent Trace with exact tool name, input, result, status and duration
+- A one-click jury guide and deterministic demo reset (`?demo=1`)
 - A manual/in-app agent fallback when WebMCP is not available
 - Original food photography and hand-painted culinary decals generated for PantryPilot
 - Unit, state and WebMCP contract tests plus a production build
@@ -66,7 +74,14 @@ npm test
 npm run build
 ```
 
-The tests cover ingredient aliases, deterministic recipe ranking, scaling, substitutions-before-shopping, shopping deduplication, cooking snapshots, timer reconciliation and WebMCP schemas/validation.
+The tests cover ingredient aliases, deterministic recipe ranking, scaling, substitutions-before-shopping, shopping deduplication, cooking snapshots, timer reconciliation, the complete Golden Journey, the human shopping boundary and WebMCP schema/character budgets.
+
+## Submission kit
+
+- [Devpost submission copy](submission/DEVPOST.md)
+- [English video script and shot list](submission/VIDEO_SCRIPT.md)
+- [Five manual WebMCP evals](submission/EVALS.md)
+- [Final release checklist](submission/CHECKLIST.md)
 
 ## Architecture
 

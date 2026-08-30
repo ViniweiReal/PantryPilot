@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Bot, Check, PlugZap, RotateCcw, ShieldCheck, Sparkles } from 'lucide-react';
+import { Bot, Check, Clapperboard, PlugZap, RotateCcw, ShieldCheck, Sparkles } from 'lucide-react';
 import { AgentBar } from './components/AgentBar';
 import { Brand, Decal } from './components/Brand';
 import { CookMode } from './components/CookMode';
+import { DemoGuide } from './components/DemoGuide';
 import { CheckoutDialog, ShoppingReviewDialog, Toast, ToolDrawer } from './components/Overlays';
 import { PantryPanel } from './components/PantryPanel';
 import { RecipePanel } from './components/RecipePanel';
@@ -12,6 +13,7 @@ import { usePantryStore } from './store/usePantryStore';
 
 function PlannerApp() {
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [demoGuideOpen, setDemoGuideOpen] = useState(() => new URLSearchParams(window.location.search).get('demo') === '1');
   const status = usePantryStore((state) => state.webMcpStatus);
   const resetDemo = usePantryStore((state) => state.resetDemo);
 
@@ -27,6 +29,9 @@ function PlannerApp() {
           <a href="#shopping-title">Shop</a>
         </nav>
         <div className="topbar__actions">
+          <button className="demo-guide-button" type="button" onClick={() => setDemoGuideOpen(true)}>
+            <Clapperboard size={15} /><span>Demo guide</span>
+          </button>
           <button className={`webmcp-pill webmcp-pill--${status}`} type="button" onClick={() => setToolsOpen(true)}>
             <span>{status === 'connected' ? <Check size={12} /> : <PlugZap size={12} />}</span>
             {statusLabel}
@@ -64,6 +69,7 @@ function PlannerApp() {
 
       <Decal kind="tomato" className="page-decal page-decal--tomato" />
       <Decal kind="basil" className="page-decal page-decal--basil" />
+      <DemoGuide open={demoGuideOpen} onClose={() => setDemoGuideOpen(false)} />
       <ToolDrawer open={toolsOpen} onClose={() => setToolsOpen(false)} />
       <ShoppingReviewDialog />
       <CheckoutDialog />
