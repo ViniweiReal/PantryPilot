@@ -494,6 +494,12 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
 
   startTimer: (label, durationSeconds, stepId = null, source = 'you') => {
     const seconds = clamp(Math.round(durationSeconds), 1, 14_400);
+    const existing = stepId
+      ? Object.values(get().timers).find((timer) => timer.stepId === stepId && timer.status !== 'completed')
+      : undefined;
+    if (existing) {
+      return { ok: true, message: `“${existing.label}” is already ${existing.status}.`, timerId: existing.id };
+    }
     const id = uid('timer');
     const timer: CookingTimer = {
       id,

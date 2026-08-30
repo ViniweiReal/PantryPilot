@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
+  BellRing,
   Check,
   ChefHat,
   ChevronLeft,
@@ -52,13 +53,76 @@ function ActiveTimer({ timer, now }: { timer: CookingTimer; now: number }) {
   );
 }
 
+function StepTimerGuide({
+  timer,
+  now,
+  label,
+  durationSeconds,
+  stepId,
+}: {
+  timer?: CookingTimer;
+  now: number;
+  label: string;
+  durationSeconds: number;
+  stepId: string;
+}) {
+  const start = usePantryStore((state) => state.startTimer);
+  const pause = usePantryStore((state) => state.pauseTimer);
+  const resume = usePantryStore((state) => state.resumeTimer);
+  const remove = usePantryStore((state) => state.removeTimer);
+  const remaining = timer ? remainingMilliseconds(timer, now) : durationSeconds * 1000;
+  const elapsedProgress = timer?.durationSeconds
+    ? Math.max(0, Math.min(100, 100 - (remaining / (timer.durationSeconds * 1000)) * 100))
+    : 0;
+
+  const restart = () => {
+    if (timer) remove(timer.id);
+    start(label, durationSeconds, stepId);
+  };
+
+  if (!timer) {
+    return (
+      <section className="step-timer-guide step-timer-guide--ready" aria-label={`${label} timer is ready`}>
+        <div className="step-timer-guide__icon"><Timer size={23} /></div>
+        <div className="step-timer-guide__copy">
+          <span>Ready when the pan is ready</span>
+          <strong>{formatTimer(durationSeconds * 1000)} · {label}</strong>
+          <p>Start it at the beginning of this step. PantryPilot will ring, but never skip ahead without you.</p>
+        </div>
+        <button className="button button--timer" type="button" onClick={() => start(label, durationSeconds, stepId)}>
+          <Play size={16} /> Start timer
+        </button>
+      </section>
+    );
+  }
+
+  return (
+    <section className={`step-timer-guide step-timer-guide--${timer.status}`} aria-live="polite" aria-label={`${label} timer ${timer.status}`}>
+      <div className="step-timer-guide__clock">
+        <span>{timer.status === 'completed' ? <BellRing size={20} /> : <Timer size={20} />}</span>
+        <strong>{timer.status === 'completed' ? 'Done' : formatTimer(remaining)}</strong>
+        <small>{timer.status === 'paused' ? 'paused' : timer.status === 'completed' ? 'timer finished' : 'remaining'}</small>
+      </div>
+      <div className="step-timer-guide__body">
+        <div><span>{timer.status === 'completed' ? 'Ready for the next step' : label}</span><strong>{timer.status === 'completed' ? 'Your timer rang.' : 'Stay on this step.'}</strong></div>
+        <div className="step-timer-guide__progress" aria-hidden="true"><i style={{ width: `${timer.status === 'completed' ? 100 : elapsedProgress}%` }} /></div>
+        <p>{timer.status === 'completed' ? 'Check the food, then confirm the step below.' : 'The next step waits for your confirmation, even when the timer ends.'}</p>
+      </div>
+      <div className="step-timer-guide__actions">
+        {timer.status === 'running' && <button type="button" onClick={() => pause(timer.id)}><Pause size={15} /> Pause</button>}
+        {timer.status === 'paused' && <button type="button" onClick={() => resume(timer.id)}><Play size={15} /> Resume</button>}
+        <button type="button" onClick={restart}><RotateCcw size={15} /> Restart</button>
+      </div>
+    </section>
+  );
+}
+
 export function CookMode() {
   const session = usePantryStore((state) => state.cookingSession);
   const timers = usePantryStore((state) => state.timers);
   const exitCooking = usePantryStore((state) => state.exitCooking);
   const goToCookingStep = usePantryStore((state) => state.goToCookingStep);
   const advanceCookingStep = usePantryStore((state) => state.advanceCookingStep);
-  const startTimer = usePantryStore((state) => state.startTimer);
   const reconcileTimers = usePantryStore((state) => state.reconcileTimers);
   const resetDemo = usePantryStore((state) => state.resetDemo);
   const [now, setNow] = useState(Date.now());
@@ -82,7 +146,19 @@ export function CookMode() {
   const step = recipe.steps[session.currentStepIndex];
   const completed = session.status === 'completed';
   const activeTimers = Object.values(timers);
+  const stepTimer = [...activeTimers].reverse().find((timer) => timer.stepId === step.id);
+  const backgroundTimers = activeTimers.filter((timer) => timer.id !== stepTimer?.id);
   const progress = completed ? 100 : (session.currentStepIndex / recipe.steps.length) * 100;
+  const timerStageComplete = !step.timerSeconds || stepTimer?.status === 'completed';
+  const nextButtonLabel = stepTimer?.status === 'running'
+    ? 'Continue while timer runs'
+    : stepTimer?.status === 'paused'
+      ? 'Continue without timer'
+      : stepTimer?.status === 'completed'
+        ? 'Timer done — next step'
+        : session.currentStepIndex === recipe.steps.length - 1
+          ? 'Dinner is ready'
+          : 'Done — next step';
 
   if (completed) {
     return (
@@ -126,11 +202,16 @@ export function CookMode() {
             {recipe.steps.map((recipeStep, index) => {
               const isDone = session.completedStepIds.includes(recipeStep.id);
               const isActive = index === session.currentStepIndex;
+              const linkedTimer = [...activeTimers].reverse().find((timer) => timer.stepId === recipeStep.id);
               return (
                 <li key={recipeStep.id} className={`${isActive ? 'is-active' : ''} ${isDone ? 'is-done' : ''}`}>
                   <button type="button" onClick={() => goToCookingStep(index)}>
                     <span>{isDone ? <Check size={14} /> : String(index + 1).padStart(2, '0')}</span>
-                    <div><small>{recipeStep.eyebrow}</small><strong>{recipeStep.title}</strong></div>
+                    <div>
+                      <small>{recipeStep.eyebrow}</small>
+                      <strong>{recipeStep.title}</strong>
+                      {recipeStep.timerSeconds && <em>{linkedTimer ? (linkedTimer.status === 'completed' ? 'timer done' : `${formatTimer(remainingMilliseconds(linkedTimer, now))} ${linkedTimer.status}`) : `${Math.ceil(recipeStep.timerSeconds / 60)} min timer`}</em>}
+                    </div>
                   </button>
                 </li>
               );
@@ -145,23 +226,29 @@ export function CookMode() {
           <h1 id="active-step-title">{step.title}</h1>
           <p>{step.instruction}</p>
 
+          <div className="step-sequence" aria-label="How to complete this step">
+            <span className="is-complete"><Check size={13} /> 1 · Read</span>
+            <ArrowRight size={13} />
+            <span className={step.timerSeconds ? (stepTimer ? 'is-complete' : 'is-current') : 'is-muted'}>{step.timerSeconds ? `${stepTimer ? '✓' : '2 ·'} Run timer` : '2 · No timer'}</span>
+            <ArrowRight size={13} />
+            <span className={timerStageComplete ? 'is-current' : ''}>3 · Confirm step</span>
+          </div>
+
           <div className="step-meta">
             <span><Clock3 size={18} /><strong>{step.minutes} min</strong><small>this step</small></span>
             <span><Flame size={18} /><strong>{session.currentStepIndex === 0 ? 'Medium' : 'Low–medium'}</strong><small>heat</small></span>
           </div>
 
-          {step.timerSeconds && (
-            <button className="step-timer-button" type="button" onClick={() => startTimer(step.timerLabel ?? step.title, step.timerSeconds!, step.id)}>
-              <span><Timer size={20} /></span>
-              <div><strong>Start {step.timerLabel}</strong><small>{Math.ceil(step.timerSeconds / 60)} minute guided timer</small></div>
-              <Play size={17} />
-            </button>
+          {step.timerSeconds ? (
+            <StepTimerGuide timer={stepTimer} now={now} label={step.timerLabel ?? step.title} durationSeconds={step.timerSeconds} stepId={step.id} />
+          ) : (
+            <div className="step-no-timer"><Check size={18} /><div><strong>No timer needed</strong><span>Work at your pace, then confirm this step when it looks right.</span></div></div>
           )}
 
           <div className="step-navigation">
             <button className="button button--ghost" type="button" disabled={session.currentStepIndex === 0} onClick={() => goToCookingStep(session.currentStepIndex - 1)}><ArrowLeft size={17} /> Previous</button>
             <button className="button button--primary button--large" type="button" onClick={() => advanceCookingStep()}>
-              {session.currentStepIndex === recipe.steps.length - 1 ? 'Dinner is ready' : 'Done — next step'} <ArrowRight size={18} />
+              {nextButtonLabel} <ArrowRight size={18} />
             </button>
           </div>
         </section>
@@ -172,10 +259,10 @@ export function CookMode() {
             <div className="panel-heading panel-heading--compact"><div><span className="panel-kicker">Keep close</span><h2>At a glance</h2></div></div>
             <ul>{ingredients.slice(0, 6).map((ingredient) => <li key={ingredient.id}><span>{ingredient.name}</span><strong>{formatAmount(ingredient.amount, ingredient.unit)}</strong></li>)}</ul>
           </section>
-          {activeTimers.length > 0 && (
-            <section className="timer-stack" aria-label="Active timers">
-              <span className="panel-kicker">Timers</span>
-              {activeTimers.map((timer) => <ActiveTimer key={timer.id} timer={timer} now={now} />)}
+          {backgroundTimers.length > 0 && (
+            <section className="timer-stack" aria-label="Other timers">
+              <span className="panel-kicker">Other timers</span>
+              {backgroundTimers.map((timer) => <ActiveTimer key={timer.id} timer={timer} now={now} />)}
             </section>
           )}
         </aside>

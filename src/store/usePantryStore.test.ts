@@ -52,4 +52,13 @@ describe('PantryPilot store', () => {
     expect(trace[0].toolName).toBe('tool_24');
     expect(trace.at(-1)?.toolName).toBe('tool_5');
   });
+
+  it('does not create duplicate timers for the same cooking step', () => {
+    usePantryStore.getState().startCooking();
+    const first = usePantryStore.getState().startTimer('Tomato base', 300, 'base');
+    const second = usePantryStore.getState().startTimer('Tomato base', 300, 'base');
+
+    expect(second.timerId).toBe(first.timerId);
+    expect(Object.values(usePantryStore.getState().timers)).toHaveLength(1);
+  });
 });

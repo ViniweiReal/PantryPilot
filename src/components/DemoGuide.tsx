@@ -43,8 +43,8 @@ export function DemoGuide({ open, onClose }: { open: boolean; onClose: () => voi
         <span className="demo-guide__badge">Judge-ready walkthrough</span>
       </div>
       <span className="panel-kicker">Golden demo</span>
-      <h2 id="demo-guide-title">See human + agent collaboration in one minute.</h2>
-      <p>Start from three pantry staples, let an agent plan and adapt dinner, then keep the final shopping decision human.</p>
+      <h2 id="demo-guide-title">Understand the whole dinner flow in one minute.</h2>
+      <p>PantryPilot moves from what you have to a guided cooking step — with a human decision exactly where it matters.</p>
 
       <div className={`demo-readiness demo-readiness--${status}`}>
         {status === 'connected' ? <Check size={18} /> : <PlugZap size={18} />}
@@ -52,9 +52,10 @@ export function DemoGuide({ open, onClose }: { open: boolean; onClose: () => voi
       </div>
 
       <ol className="demo-guide__steps">
-        <li><span>01</span><div><strong>Prepare the kitchen</strong><p>Reset to eggs, tomatoes and rice with an empty trace.</p></div></li>
-        <li><span>02</span><div><strong>Give your agent one goal</strong><p>Paste the prompt below into the browser agent.</p></div></li>
-        <li><span>03</span><div><strong>Watch, then approve</strong><p>Tool calls stay visible. Shopping pauses for your click.</p></div></li>
+        <li><span>01</span><div><strong>Pantry</strong><p>Reset to eggs, tomatoes and rice.</p></div></li>
+        <li><span>02</span><div><strong>Plan</strong><p>The agent ranks, adapts and explains a recipe.</p></div></li>
+        <li><span>03</span><div><strong>Approve</strong><p>Shopping pauses for your human click.</p></div></li>
+        <li><span>04</span><div><strong>Cook</strong><p>Read the step, run its timer, then confirm.</p></div></li>
       </ol>
 
       <div className="demo-prompt">

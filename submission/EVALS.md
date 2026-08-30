@@ -20,11 +20,11 @@ Run each eval from **Prepare demo** and record pass/fail plus a short note. The 
 
 ## Eval 3 — Fast vegan planning
 
-**Prompt:** “Choose a vegan dinner that takes no more than 25 minutes. Do not add anything to my shopping list yet.”
+**Prompt:** “Choose a vegan dinner that takes no more than 30 minutes. Do not add anything to my shopping list yet.”
 
 **Expected tools:** `get_kitchen_state` → `plan_dinner`
 
-**Visible result:** A matching vegan plan; shopping list and review remain unchanged.
+**Visible result:** Coconut tomato rice is selected; shopping list and review remain unchanged.
 
 ## Eval 4 — Transaction safety
 

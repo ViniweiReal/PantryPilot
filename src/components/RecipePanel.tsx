@@ -12,11 +12,12 @@ import {
   Minus,
   Plus,
   ShoppingBasket,
+  Shuffle,
   Sparkles,
   Users,
 } from 'lucide-react';
-import { FEATURED_RECIPE_IDS, getRecipe } from '../data/recipes';
-import { effectiveIngredients, formatAmount, missingIngredients, pantryContains } from '../domain/meal-engine';
+import { getRecipe } from '../data/recipes';
+import { effectiveIngredients, formatAmount, missingIngredients, pantryContains, rankRecipes } from '../domain/meal-engine';
 import { usePantryStore } from '../store/usePantryStore';
 import { Decal } from './Brand';
 
@@ -32,12 +33,25 @@ export function RecipePanel() {
   const proposeShoppingList = usePantryStore((state) => state.proposeShoppingList);
   const startCooking = usePantryStore((state) => state.startCooking);
   const [tab, setTab] = useState<Tab>('ingredients');
+  const [ideaOffset, setIdeaOffset] = useState(0);
   const recipe = getRecipe(plan?.recipeId);
 
   const ingredients = useMemo(() => recipe && plan ? effectiveIngredients(recipe, plan) : [], [recipe, plan]);
   const missing = useMemo(() => recipe && plan ? missingIngredients(recipe, plan, pantry) : [], [recipe, plan, pantry]);
   const matchedCount = ingredients.filter((ingredient) => pantryContains(pantry, ingredient.ingredientId)).length;
-  const alternatives = FEATURED_RECIPE_IDS.filter((id) => id !== recipe?.id).map(getRecipe).filter(Boolean);
+  const alternativeMatches = useMemo(() => rankRecipes(pantry, {
+    ...preferences,
+    diet: 'anything',
+    maxMinutes: 60,
+  }).filter((match) => match.recipe.id !== recipe?.id), [pantry, preferences, recipe?.id]);
+  const safeIdeaOffset = alternativeMatches.length ? ideaOffset % alternativeMatches.length : 0;
+  const visibleIdeas = Array.from({ length: Math.min(2, alternativeMatches.length) }, (_, index) =>
+    alternativeMatches[(safeIdeaOffset + index) % alternativeMatches.length],
+  );
+  const rotateIdeas = (direction: 1 | -1) => setIdeaOffset((offset) => {
+    if (!alternativeMatches.length) return 0;
+    return (offset + direction * 2 + alternativeMatches.length) % alternativeMatches.length;
+  });
 
   if (!recipe || !plan) {
     return (
@@ -142,18 +156,27 @@ export function RecipePanel() {
 
       <section className="alternatives" aria-labelledby="alternatives-title">
         <div className="section-heading-inline">
-          <div><span className="panel-kicker">More good ideas</span><h3 id="alternatives-title">Also from your pantry</h3></div>
-          <div className="carousel-controls" aria-hidden="true"><button type="button"><ChevronLeft size={16} /></button><button type="button"><ChevronRight size={16} /></button></div>
+          <div>
+            <span className="panel-kicker">Ranked live · not a fixed list</span>
+            <h3 id="alternatives-title">Also from your pantry</h3>
+            <span className="ideas-status"><Shuffle size={12} /> {alternativeMatches.length} more recipes ranked from what you have</span>
+          </div>
+          <div className="carousel-controls">
+            <button type="button" aria-label="Previous recipe ideas" onClick={() => rotateIdeas(-1)}><ChevronLeft size={16} /></button>
+            <button type="button" aria-label="Shuffle recipe ideas" onClick={() => rotateIdeas(1)}><Shuffle size={15} /></button>
+            <button type="button" aria-label="Next recipe ideas" onClick={() => rotateIdeas(1)}><ChevronRight size={16} /></button>
+          </div>
         </div>
         <div className="alternative-grid">
-          {alternatives.slice(0, 2).map((alternative) => alternative && (
-            <button className="alternative-card" type="button" key={alternative.id} onClick={() => selectRecipe(alternative.id)}>
-              <img src={alternative.image} alt="" />
+          {visibleIdeas.map((alternative) => (
+            <button className="alternative-card" type="button" key={alternative.recipe.id} onClick={() => { selectRecipe(alternative.recipe.id); setIdeaOffset(0); }}>
+              <img src={alternative.recipe.image} alt="" />
               <span className="alternative-card__shade" />
+              <span className="alternative-card__fit">{alternative.matchedCount} pantry match{alternative.matchedCount === 1 ? '' : 'es'}</span>
               <span className="alternative-card__content">
-                <small><Clock3 size={13} /> {alternative.totalMinutes} min · {alternative.difficulty}</small>
-                <strong>{alternative.title}</strong>
-                <span>{alternative.subtitle}</span>
+                <small><Clock3 size={13} /> {alternative.recipe.totalMinutes} min · {alternative.recipe.diets[0]}</small>
+                <strong>{alternative.recipe.title}</strong>
+                <span>{alternative.recipe.subtitle}</span>
               </span>
               <span className="alternative-card__go"><ArrowRight size={16} /></span>
             </button>

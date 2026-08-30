@@ -1437,6 +1437,15 @@ li:hover > .icon-button--quiet,
   font-size: 21px;
 }
 
+.ideas-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
 .carousel-controls {
   display: flex;
   gap: 5px;
@@ -1451,6 +1460,12 @@ li:hover > .icon-button--quiet,
   border: 1px solid var(--line);
   border-radius: 9px;
   background: var(--paper);
+}
+
+.carousel-controls button:hover {
+  color: var(--aubergine);
+  border-color: rgba(90, 45, 69, 0.24);
+  background: var(--aubergine-soft);
 }
 
 .alternative-grid {
@@ -1491,6 +1506,23 @@ li:hover > .icon-button--quiet,
 
 .alternative-card__shade {
   background: linear-gradient(180deg, transparent 20%, rgba(25, 18, 12, 0.79));
+}
+
+.alternative-card__fit {
+  position: absolute;
+  top: 11px;
+  left: 11px;
+  z-index: 1;
+  padding: 5px 7px;
+  color: #fff;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(34, 32, 25, 0.5);
+  backdrop-filter: blur(8px);
 }
 
 .alternative-card__content {
@@ -2324,7 +2356,7 @@ footer a:hover {
 
 .demo-guide__steps {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
   margin: 0 0 16px;
   padding: 0;
@@ -2781,6 +2813,15 @@ footer a:hover {
   white-space: nowrap;
 }
 
+.step-rail button em {
+  margin-top: 3px;
+  color: var(--aubergine);
+  font-size: 7px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .step-rail li.is-active button {
   background: rgba(255, 253, 248, 0.66);
   box-shadow: var(--shadow-sm);
@@ -2881,6 +2922,44 @@ footer a:hover {
   line-height: 1.65;
 }
 
+.step-sequence {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 21px;
+  color: #9a9387;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.step-sequence span {
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.step-sequence span.is-complete {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--basil-dark);
+  background: var(--basil-soft);
+}
+
+.step-sequence span.is-current {
+  color: var(--aubergine);
+  border-color: rgba(90, 45, 69, 0.19);
+  background: var(--aubergine-soft);
+}
+
+.step-sequence span.is-muted {
+  color: var(--muted);
+  background: rgba(34, 32, 25, 0.05);
+}
+
 .step-meta {
   display: flex;
   gap: 9px;
@@ -2951,6 +3030,184 @@ footer a:hover {
 
 .step-timer-button small {
   color: var(--muted);
+  font-size: 8px;
+}
+
+.step-timer-guide {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 104px;
+  padding: 14px;
+  border: 1px solid rgba(90, 45, 69, 0.18);
+  border-radius: 17px;
+  background: linear-gradient(135deg, rgba(243, 231, 238, 0.92), rgba(255, 253, 248, 0.86));
+}
+
+.step-timer-guide__icon {
+  display: grid;
+  width: 55px;
+  height: 55px;
+  place-items: center;
+  color: #fff;
+  border-radius: 16px;
+  background: var(--aubergine);
+  box-shadow: 0 8px 18px rgba(90, 45, 69, 0.2);
+}
+
+.step-timer-guide__copy,
+.step-timer-guide__body,
+.step-timer-guide__body > div:first-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.step-timer-guide__copy > span,
+.step-timer-guide__body span {
+  color: var(--aubergine);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.step-timer-guide__copy strong,
+.step-timer-guide__body strong {
+  margin-top: 2px;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 17px;
+}
+
+.step-timer-guide__copy p,
+.step-timer-guide__body p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.button--timer {
+  min-width: 120px;
+  color: #fff;
+  background: var(--aubergine);
+}
+
+.step-timer-guide__clock {
+  display: flex;
+  width: 94px;
+  min-height: 78px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  color: #fff;
+  border-radius: 15px;
+  background: var(--aubergine);
+}
+
+.step-timer-guide__clock > span {
+  display: none;
+}
+
+.step-timer-guide__clock strong {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 24px;
+  letter-spacing: -0.05em;
+}
+
+.step-timer-guide__clock small {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.step-timer-guide__progress {
+  height: 6px;
+  margin-top: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(90, 45, 69, 0.1);
+}
+
+.step-timer-guide__progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--aubergine);
+  transition: width 500ms linear;
+}
+
+.step-timer-guide__actions {
+  display: grid;
+  gap: 6px;
+}
+
+.step-timer-guide__actions button {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 10px;
+  color: var(--aubergine);
+  font-size: 8px;
+  font-weight: 700;
+  border: 1px solid rgba(90, 45, 69, 0.14);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.step-timer-guide--paused {
+  border-color: rgba(240, 179, 60, 0.36);
+  background: linear-gradient(135deg, rgba(247, 232, 194, 0.72), rgba(255, 253, 248, 0.9));
+}
+
+.step-timer-guide--completed {
+  border-color: rgba(53, 107, 69, 0.25);
+  background: linear-gradient(135deg, rgba(220, 232, 218, 0.9), rgba(255, 253, 248, 0.9));
+}
+
+.step-timer-guide--completed .step-timer-guide__clock {
+  background: var(--basil);
+}
+
+.step-timer-guide--completed .step-timer-guide__clock > span {
+  display: block;
+}
+
+.step-timer-guide--completed .step-timer-guide__clock strong {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 20px;
+  letter-spacing: 0;
+}
+
+.step-no-timer {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 14px;
+  color: var(--basil-dark);
+  border: 1px solid rgba(53, 107, 69, 0.15);
+  border-radius: 14px;
+  background: rgba(220, 232, 218, 0.55);
+}
+
+.step-no-timer > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.step-no-timer strong {
+  font-size: 10px;
+}
+
+.step-no-timer span {
+  margin-top: 2px;
+  color: #5c715e;
   font-size: 8px;
 }
 
@@ -3608,6 +3865,48 @@ footer a:hover {
 
   .step-meta > span {
     min-width: 0;
+  }
+
+  .step-sequence {
+    overflow-x: auto;
+    margin-right: -19px;
+    padding-right: 19px;
+    scrollbar-width: none;
+  }
+
+  .step-sequence::-webkit-scrollbar {
+    display: none;
+  }
+
+  .step-timer-guide {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  .step-timer-guide__icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .step-timer-guide--ready .button--timer,
+  .step-timer-guide__actions {
+    grid-column: 1 / -1;
+  }
+
+  .step-timer-guide--ready .button--timer {
+    width: 100%;
+  }
+
+  .step-timer-guide__clock {
+    width: 82px;
+  }
+
+  .step-timer-guide__clock strong {
+    font-size: 20px;
+  }
+
+  .step-timer-guide__actions {
+    grid-template-columns: 1fr 1fr;
   }
 
   .step-navigation {
