@@ -37,7 +37,9 @@ export function PantryPanel() {
     <aside className="side-card pantry-card" aria-labelledby="pantry-title">
       <div className="panel-heading">
         <div><span className="panel-kicker">01 · Start here</span><h2 id="pantry-title">Your pantry</h2></div>
-        <span className="count-badge">{pantry.length}</span>
+        <span className="count-badge count-badge--ingredients" aria-label={`${pantry.length} ingredients`}>
+          <strong>{pantry.length}</strong><small>ingredients</small>
+        </span>
       </div>
       <p className="panel-intro">What’s on hand right now?</p>
 

@@ -667,6 +667,18 @@ a {
   background: var(--tomato-soft);
 }
 
+.count-badge--ingredients {
+  min-width: 69px;
+  height: 34px;
+  align-content: center;
+  gap: 1px;
+  padding-inline: 8px;
+  line-height: 1;
+}
+
+.count-badge--ingredients strong { font-size: 12px; }
+.count-badge--ingredients small { font-size: 7px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+
 .panel-intro {
   margin: 11px 0 15px;
   color: var(--muted);

@@ -14,13 +14,13 @@ Record in English with your own voice. Use no protected music, retailer branding
 
 **Picture:** Open Demo Guide. Point to WebMCP readiness, Golden Prompt and the ten-tool belt.
 
-**Voice-over:** “PantryPilot is a real WebMCP cooking app. Its ten structured tools operate the same live state as the interface. The agent does not guess where to click, and every action remains visible.”
+**Voice-over:** “PantryPilot is a real WebMCP cooking app. Its ten structured tools operate the same live state as the interface. Watch the Agent Trace on the right: the agent does not guess where to click, and every action remains visible.”
 
 ### 0:35–1:25 — Golden Prompt and tool sequence
 
 **Picture:** Choose Prepare demo, copy and submit the Golden Prompt. Keep Agent Trace in view as kitchen state, planning and substitution run.
 
-**Voice-over:** “I reset a deterministic demo pantry and ask: plan a vegetarian dinner for two in under twenty-five minutes, use my tomatoes first, replace dairy, add anything missing, then start cooking. The agent reads my kitchen, selects Golden tomato rice, scales it for two, and swaps whole milk for oat milk. The trace shows the exact tool, compact input, result, status and duration.”
+**Voice-over:** “I reset a deterministic demo pantry and ask: plan a vegetarian dinner for two in under twenty-five minutes, use my tomatoes first, replace dairy, add anything missing, then start cooking. The agent reads my kitchen, selects Golden tomato rice, scales it for two, and swaps whole milk for oat milk. Keep your eye on the Agent Trace: it records the exact tool, compact input, result, status and duration for every action.”
 
 ### 1:25–1:50 — Human approval
 
