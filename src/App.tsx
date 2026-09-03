@@ -41,7 +41,7 @@ function PlannerApp() {
             <small>{TOOL_CATALOG.length}</small>
           </button>
           <button className="reset-button" type="button" onClick={() => resetDemo()} title="Reset the golden demo"><RotateCcw size={16} /><span>Reset demo</span></button>
-          <span className="profile-dot" aria-label="Demo kitchen profile">VW</span>
+          <span className="profile-dot" aria-label="PantryPilot demo kitchen" title="PantryPilot demo kitchen"><Bot size={16} aria-hidden="true" /></span>
         </div>
       </header>
 

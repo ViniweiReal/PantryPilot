@@ -262,23 +262,24 @@ a {
 
 .demo-guide-button {
   display: inline-flex;
-  min-height: 36px;
+  min-height: 40px;
   align-items: center;
   gap: 7px;
-  padding: 7px 11px;
-  color: var(--aubergine);
+  padding: 8px 13px;
+  color: #fff;
   font-size: 11px;
   font-weight: 700;
-  border: 1px solid rgba(105, 43, 84, 0.17);
+  border: 1px solid var(--aubergine);
   border-radius: 999px;
-  background: rgba(234, 218, 230, 0.62);
+  background: var(--aubergine);
+  box-shadow: 0 5px 13px rgba(90, 45, 69, 0.2);
   transition: 160ms ease;
 }
 
 .demo-guide-button:hover {
-  border-color: rgba(105, 43, 84, 0.35);
-  background: var(--aubergine-soft);
-  box-shadow: 0 5px 14px rgba(74, 35, 63, 0.09);
+  border-color: var(--aubergine);
+  background: #472137;
+  box-shadow: 0 8px 18px rgba(74, 35, 63, 0.24);
   transform: translateY(-1px);
 }
 
@@ -355,7 +356,6 @@ a {
   place-items: center;
   color: #fff;
   font-size: 10px;
-  font-weight: 700;
   border: 2px solid var(--paper-strong);
   border-radius: 50%;
   background: var(--aubergine);
@@ -1115,7 +1115,7 @@ li:hover > .icon-button--quiet,
 
 .recipe-visual {
   position: relative;
-  min-height: clamp(270px, 25vw, 410px);
+  height: clamp(270px, 25vw, 410px);
   overflow: hidden;
   background: #ba704f;
 }
@@ -1123,6 +1123,7 @@ li:hover > .icon-button--quiet,
 .recipe-visual > img {
   position: absolute;
   inset: 0;
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -3841,7 +3842,7 @@ footer a:hover {
   }
 
   .recipe-visual {
-    min-height: 380px;
+    height: 380px;
   }
 
   .trust-strip {
@@ -4015,7 +4016,7 @@ footer a:hover {
   }
 
   .recipe-visual {
-    min-height: 290px;
+    height: 290px;
   }
 
   .recipe-body {
