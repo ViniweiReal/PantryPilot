@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { RECIPES, getRecipe } from '../data/recipes';
-import { effectiveIngredients, formatAmount, getPlanRecipe, missingIngredients } from '../domain/meal-engine';
+import { effectiveIngredients, formatAmount, getPlanRecipe, missingIngredients, recipeCoverage } from '../domain/meal-engine';
 import { usePantryStore, type WebMcpStatus } from '../store/usePantryStore';
 
 export const TOOL_CATALOG = [
@@ -18,6 +18,8 @@ export const TOOL_CATALOG = [
   { name: 'set_cooking_timer', title: 'Set cooking timer', short: 'Start a named, persistent timer', readOnly: false },
 ] as const;
 
+export type ToolExecutionResult = Record<string, unknown>;
+
 const emptySchema = z.object({}).strict();
 const planSchema = z.object({
   availableIngredients: z.array(z.string().min(1).max(80)).min(1).max(30).optional(),
@@ -31,6 +33,7 @@ const replacementSchema = z.object({
   ingredient: z.string().min(1).max(80),
   replacement: z.string().min(1).max(80),
 }).strict();
+const shoppingSchema = z.object({ continueToCooking: z.boolean().optional() }).strict();
 const timerSchema = z.object({
   label: z.string().min(1).max(80),
   durationSeconds: z.number().int().min(1).max(14_400),
@@ -78,6 +81,7 @@ function stateSummary() {
       servings: plan.servings,
       minutes: recipe.totalMinutes,
       substitutions: Object.values(plan.substitutions).map((swap) => swap.name),
+      coverage: recipeCoverage(recipe, plan, state.pantry),
       ingredients: effectiveIngredients(recipe, plan).map((ingredient) => ({
         name: ingredient.name,
         amount: formatAmount(ingredient.amount, ingredient.unit),
@@ -168,7 +172,7 @@ export function createWebMcpTools(): WebMCP.ModelContextTool[] {
       name: 'get_kitchen_state',
       title: 'Read kitchen state',
       description: 'Read the visible PantryPilot pantry, meal preferences, current recipe, shopping list, cooking progress and timers. Use before planning or adapting dinner.',
-      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
       annotations: { readOnlyHint: true, untrustedContentHint: false },
     }, emptySchema, () => okResult('get_kitchen_state', 'Kitchen state read.', stateSummary())),
 
@@ -249,10 +253,14 @@ export function createWebMcpTools(): WebMCP.ModelContextTool[] {
       name: 'add_missing_to_shopping_list',
       title: 'Review missing ingredients',
       description: 'Prepare missing recipe ingredients in a visible review sheet. This never adds or buys anything until the user confirms in the page.',
-      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      inputSchema: {
+        type: 'object',
+        properties: { continueToCooking: { type: 'boolean', description: 'Start cooking after the user approves the prepared list.' } },
+        additionalProperties: false,
+      },
       annotations: { readOnlyHint: false, untrustedContentHint: false },
-    }, emptySchema, () => {
-      const result = usePantryStore.getState().proposeShoppingList('agent');
+    }, shoppingSchema, (input) => {
+      const result = usePantryStore.getState().proposeShoppingList('agent', input.continueToCooking ?? false);
       return result.ok
         ? okResult('add_missing_to_shopping_list', result.message, { count: result.count, confirmationRequired: result.count > 0 })
         : errorResult('add_missing_to_shopping_list', new Error(result.message));
@@ -312,6 +320,23 @@ export function createWebMcpTools(): WebMCP.ModelContextTool[] {
       return result.ok ? okResult('set_cooking_timer', result.message, { timerId: result.timerId }) : errorResult('set_cooking_timer', new Error(result.message));
     }),
   ];
+}
+
+/**
+ * The in-page agent console uses this same validated execution surface as the
+ * browser's WebMCP registration. Keeping the dispatcher here means both paths
+ * produce the same trace events and state transitions.
+ */
+export async function executeWebMcpTool(
+  name: string,
+  input: Record<string, unknown> = {},
+  signal: AbortSignal = new AbortController().signal,
+): Promise<ToolExecutionResult> {
+  const definition = createWebMcpTools().find((candidate) => candidate.name === name);
+  if (!definition) {
+    return { ok: false, action: name, code: 'UNKNOWN_TOOL', message: `Unknown tool “${name}”.`, recoverable: true };
+  }
+  return definition.execute(input, { signal }) as Promise<ToolExecutionResult>;
 }
 
 let registrationController: AbortController | null = null;

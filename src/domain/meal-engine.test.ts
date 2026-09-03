@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { getRecipe } from '../data/recipes';
+import { getRecipe, RECIPES } from '../data/recipes';
 import type { MealPlan, MealPreferences } from './types';
 import {
   createPantryItems,
   effectiveIngredients,
   formatAmount,
+  ingredientAvailability,
   missingIngredients,
   rankRecipes,
+  recipeCoverage,
   resolveSubstitution,
 } from './meal-engine';
 
@@ -18,6 +20,10 @@ const preferences: MealPreferences = {
 };
 
 describe('meal engine', () => {
+  it('gives every recipe its own visual identity', () => {
+    expect(new Set(RECIPES.map((recipe) => recipe.image)).size).toBe(RECIPES.length);
+  });
+
   it('normalizes mixed English and German pantry names without duplicates', () => {
     const pantry = createPantryItems(['Eggs', 'Tomaten', 'Reis', 'Eier']);
     expect(pantry.map((item) => item.ingredientId)).toEqual(['egg', 'tomato', 'rice']);
@@ -101,5 +107,19 @@ describe('meal engine', () => {
     const missing = missingIngredients(recipe, plan, createPantryItems(['eggs', 'tomatoes', 'rice']));
     expect(missing.some((item) => item.ingredientId === 'oat-milk')).toBe(true);
     expect(missing.some((item) => item.ingredientId === 'whole-milk')).toBe(false);
+  });
+
+  it('reports an honest required-ingredient coverage and distinct availability states', () => {
+    const recipe = getRecipe('golden-tomato-rice')!;
+    const plan: MealPlan = { recipeId: recipe.id, servings: 2, substitutions: {}, createdAt: 1, updatedAt: 1 };
+    const pantry = createPantryItems(['eggs', 'tomatoes', 'rice']);
+    const ingredients = effectiveIngredients(recipe, plan);
+
+    expect(recipeCoverage(recipe, plan, pantry)).toEqual({ matchedCount: 3, requiredCount: 7, percent: 43 });
+    expect(ingredientAvailability(ingredients.find((ingredient) => ingredient.id === 'eggs')!, pantry)).toBe('in pantry');
+    expect(ingredientAvailability(ingredients.find((ingredient) => ingredient.id === 'paprika')!, pantry)).toBe('pantry staple');
+    expect(ingredientAvailability(ingredients.find((ingredient) => ingredient.id === 'basil')!, pantry)).toBe('optional');
+    expect(ingredientAvailability(ingredients.find((ingredient) => ingredient.id === 'milk')!, pantry)).toBe('need');
+    expect(missingIngredients(recipe, plan, pantry).some((item) => item.ingredientId === 'smoked-paprika')).toBe(false);
   });
 });

@@ -22,7 +22,10 @@ interface IngredientPhotoProps {
 
 export function IngredientPhoto({ ingredientId, size = 'compact' }: IngredientPhotoProps) {
   const position = atlasPositions[ingredientId];
-  const style = position ? ({ '--ingredient-position': position } as CSSProperties) : undefined;
+  const style = position ? ({
+    '--ingredient-position': position,
+    '--ingredient-atlas': `url('${import.meta.env.BASE_URL}images/ingredient-atlas.webp')`,
+  } as CSSProperties) : undefined;
 
   return (
     <span

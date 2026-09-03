@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Bot, Check, Clapperboard, PlugZap, RotateCcw, ShieldCheck, Sparkles } from 'lucide-react';
 import { AgentBar } from './components/AgentBar';
 import { Brand, Decal } from './components/Brand';
 import { CookMode } from './components/CookMode';
 import { DemoGuide } from './components/DemoGuide';
+import { DinnerRoute } from './components/DinnerRoute';
 import { CheckoutDialog, ShoppingReviewDialog, Toast, ToolDrawer } from './components/Overlays';
 import { PantryPanel } from './components/PantryPanel';
 import { RecipePanel } from './components/RecipePanel';
+import { RecipeExtras } from './components/RecipeExtras';
 import { ShoppingPanel } from './components/ShoppingPanel';
 import { TOOL_CATALOG, registerWebMcpTools } from './webmcp/tools';
 import { usePantryStore } from './store/usePantryStore';
@@ -27,9 +29,10 @@ function PlannerApp() {
           <a className="is-active" href="#plan">Plan</a>
           <a href="#recipe-title">Recipe</a>
           <a href="#shopping-title">Shop</a>
+          <a href="#next-step">Cook</a>
         </nav>
         <div className="topbar__actions">
-          <button className="demo-guide-button" type="button" onClick={() => setDemoGuideOpen(true)}>
+          <button className="demo-guide-button" type="button" aria-label="Demo guide" onClick={() => setDemoGuideOpen(true)}>
             <Clapperboard size={15} /><span>Demo guide</span>
           </button>
           <button className={`webmcp-pill webmcp-pill--${status}`} type="button" onClick={() => setToolsOpen(true)}>
@@ -37,7 +40,7 @@ function PlannerApp() {
             {statusLabel}
             <small>{TOOL_CATALOG.length}</small>
           </button>
-          <button className="reset-button" type="button" onClick={resetDemo} title="Reset the golden demo"><RotateCcw size={16} /><span>Reset demo</span></button>
+          <button className="reset-button" type="button" onClick={() => resetDemo()} title="Reset the golden demo"><RotateCcw size={16} /><span>Reset demo</span></button>
           <span className="profile-dot" aria-label="Demo kitchen profile">VW</span>
         </div>
       </header>
@@ -53,7 +56,10 @@ function PlannerApp() {
         <PantryPanel />
         <RecipePanel />
         <ShoppingPanel />
+        <RecipeExtras />
       </div>
+
+      <DinnerRoute />
 
       <section className="trust-strip" aria-label="PantryPilot product principles">
         <div><Sparkles size={18} /><span><strong>Built around what you have</strong><small>Less waste, fewer decisions.</small></span></div>
@@ -82,6 +88,25 @@ export default function App() {
   const view = usePantryStore((state) => state.view);
   const setStatus = usePantryStore((state) => state.setWebMcpStatus);
   const reconcileTimers = usePantryStore((state) => state.reconcileTimers);
+  const resetDemo = usePantryStore((state) => state.resetDemo);
+  const demoWasSeeded = useRef(false);
+
+  useEffect(() => {
+    if (demoWasSeeded.current || new URLSearchParams(window.location.search).get('demo') !== '1') return;
+    demoWasSeeded.current = true;
+    const seedKey = 'pantrypilot:golden-demo-seeded:v1';
+    try {
+      if (window.sessionStorage.getItem(seedKey)) return;
+    } catch {
+      // Continue with a clean demo if session storage is unavailable.
+    }
+    resetDemo({ silent: true });
+    try {
+      window.sessionStorage.setItem(seedKey, '1');
+    } catch {
+      // The app remains fully usable without session storage.
+    }
+  }, [resetDemo]);
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;

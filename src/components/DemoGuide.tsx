@@ -32,7 +32,7 @@ export function DemoGuide({ open, onClose }: { open: boolean; onClose: () => voi
   };
 
   const prepare = () => {
-    resetDemo();
+    resetDemo({ silent: true });
     setPrepared(true);
   };
 

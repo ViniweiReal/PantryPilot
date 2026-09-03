@@ -20,6 +20,31 @@ describe('PantryPilot store', () => {
     const second = usePantryStore.getState().proposeShoppingList();
     expect(second.count).toBe(0);
     expect(usePantryStore.getState().shoppingItems).toHaveLength(countAfterFirst);
+    expect(second.message).toContain('already on your shopping list');
+  });
+
+  it('keeps shopping copy truthful for a partial existing list', () => {
+    expect(usePantryStore.getState().replaceIngredient('milk', 'oat milk').ok).toBe(true);
+    const first = usePantryStore.getState().proposeShoppingList();
+    expect(first.count).toBeGreaterThan(1);
+    usePantryStore.getState().confirmShoppingList();
+    const firstItem = usePantryStore.getState().shoppingItems[0];
+    usePantryStore.getState().removeShoppingItem(firstItem.id);
+
+    const partial = usePantryStore.getState().proposeShoppingList();
+    expect(partial.count).toBe(1);
+    expect(partial.message).toContain('already on your list');
+  });
+
+  it('records shopping approval as a human action', () => {
+    const review = usePantryStore.getState().proposeShoppingList('agent');
+    expect(review.count).toBeGreaterThan(0);
+    usePantryStore.getState().confirmShoppingList();
+
+    expect(usePantryStore.getState().activity[0]).toMatchObject({
+      message: `Added ${review.count} items to the list`,
+      source: 'you',
+    });
   });
 
   it('snapshots the meal plan when cooking starts', () => {
@@ -60,5 +85,34 @@ describe('PantryPilot store', () => {
 
     expect(second.timerId).toBe(first.timerId);
     expect(Object.values(usePantryStore.getState().timers)).toHaveLength(1);
+  });
+
+  it('deduplicates an active timer by label when no step id is supplied', () => {
+    const first = usePantryStore.getState().startTimer('Sauce', 300);
+    const second = usePantryStore.getState().startTimer(' sauce ', 120);
+
+    expect(second.timerId).toBe(first.timerId);
+    expect(Object.values(usePantryStore.getState().timers)).toHaveLength(1);
+  });
+
+  it('does not silently advance while a step timer is running', () => {
+    usePantryStore.getState().startCooking();
+    usePantryStore.getState().startTimer('Prep timer', 300, 'prep');
+
+    const blocked = usePantryStore.getState().advanceCookingStep();
+    expect(blocked.ok).toBe(false);
+    expect(usePantryStore.getState().cookingSession?.currentStepIndex).toBe(0);
+
+    const skipped = usePantryStore.getState().advanceCookingStep('you', { skipTimer: true });
+    expect(skipped.ok).toBe(true);
+    expect(usePantryStore.getState().cookingSession?.currentStepIndex).toBe(1);
+  });
+
+  it('rejects non-finite serving counts and timer durations', () => {
+    expect(usePantryStore.getState().adjustServings(Number.NaN).ok).toBe(false);
+    expect(usePantryStore.getState().plan?.servings).toBe(2);
+
+    expect(usePantryStore.getState().startTimer('Broken timer', Number.NaN).ok).toBe(false);
+    expect(Object.values(usePantryStore.getState().timers)).toHaveLength(0);
   });
 });

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { ArrowUp, Bot, Check, LoaderCircle, Sparkles } from 'lucide-react';
 import { usePantryStore } from '../store/usePantryStore';
+import { executeWebMcpTool } from '../webmcp/tools';
 import { Decal } from './Brand';
 
 const QUICK_PROMPTS = [
@@ -14,7 +15,6 @@ const sleep = (milliseconds: number) => new Promise((resolve) => setTimeout(reso
 export function AgentBar() {
   const [prompt, setPrompt] = useState('');
   const isAgentRunning = usePantryStore((state) => state.isAgentRunning);
-  const plan = usePantryStore((state) => state.plan);
   const setAgentRunning = usePantryStore((state) => state.setAgentRunning);
 
   const executePrompt = async (rawPrompt: string) => {
@@ -23,7 +23,6 @@ export function AgentBar() {
     setAgentRunning(true);
 
     try {
-      const store = usePantryStore.getState();
       const servingMatch = normalized.match(/(?:for|für|to)\s+(\d)|(?:cook for|servings?)\s*(\d)/);
       const servings = Number(servingMatch?.[1] ?? servingMatch?.[2]);
       const asksForPlan = /plan|dinner|abendessen|cook|meal|make me/.test(normalized);
@@ -32,39 +31,39 @@ export function AgentBar() {
       const asksToCook = /start cook|start cooking|kochmodus|cook now|then start/.test(normalized);
 
       if (asksForPlan) {
-        store.planDinner({
-          servings: Number.isFinite(servings) ? servings : undefined,
-          diet: normalized.includes('vegetarian')
-            ? 'vegetarian'
-            : normalized.includes('vegan') && !normalized.includes('dairy-free')
-              ? 'vegan'
-              : undefined,
-          maxMinutes: normalized.includes('15') ? 15 : normalized.includes('25') ? 25 : undefined,
-          source: 'agent',
+        const result = await executeWebMcpTool('plan_dinner', {
+          ...(Number.isFinite(servings) ? { servings } : {}),
+          ...(normalized.includes('vegetarian') ? { diet: 'vegetarian' } : normalized.includes('vegan') && !normalized.includes('dairy-free') ? { diet: 'vegan' } : {}),
+          ...(normalized.includes('15') ? { maxMinutes: 15 } : normalized.includes('25') ? { maxMinutes: 25 } : {}),
         });
+        if (!result.ok) return;
         await sleep(650);
       } else if (Number.isFinite(servings)) {
-        store.adjustServings(servings, 'agent');
+        const result = await executeWebMcpTool('adjust_servings', { servings });
+        if (!result.ok) return;
         await sleep(450);
       }
 
       if (asksForSwap) {
-        const result = usePantryStore.getState().replaceIngredient('milk', 'oat milk', 'agent');
-        if (!result.ok && plan) usePantryStore.getState().replaceIngredient('feta', 'chickpeas', 'agent');
+        const result = await executeWebMcpTool('replace_ingredient', { ingredient: 'milk', replacement: 'oat milk' });
+        if (!result.ok) return;
         await sleep(650);
       }
 
       if (asksForList || asksToCook) {
-        const review = usePantryStore.getState().proposeShoppingList('agent', asksToCook);
-        if (review.count > 0) return;
+        const review = await executeWebMcpTool('add_missing_to_shopping_list', { continueToCooking: asksToCook });
+        if (!review.ok || (asRecord(review.data)?.confirmationRequired === true)) return;
       }
 
-      if (asksToCook) usePantryStore.getState().startCooking('agent');
+      if (asksToCook) await executeWebMcpTool('start_cooking_mode');
     } finally {
       setAgentRunning(false);
       setPrompt('');
     }
   };
+
+  const asRecord = (value: unknown): Record<string, unknown> | null =>
+    typeof value === 'object' && value !== null ? value as Record<string, unknown> : null;
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -83,7 +82,7 @@ export function AgentBar() {
       <div className="agent-console">
         <div className="agent-console__status">
           <span className="agent-avatar"><Bot size={17} aria-hidden="true" /></span>
-          <span><strong>Pantry agent</strong><small>{isAgentRunning ? 'Working through your request…' : 'Ready to help'}</small></span>
+          <span><strong>Pantry agent</strong><small aria-live="polite">{isAgentRunning ? 'Working through your request…' : 'Ready to help'}</small></span>
           <span className="agent-console__secure"><Check size={13} /> You stay in control</span>
         </div>
         <form className="prompt-box" onSubmit={handleSubmit}>

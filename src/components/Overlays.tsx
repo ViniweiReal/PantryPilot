@@ -16,20 +16,37 @@ import { TOOL_CATALOG } from '../webmcp/tools';
 import { usePantryStore } from '../store/usePantryStore';
 
 export function OverlayShell({ titleId, onClose, children, className = '' }: { titleId: string; onClose: () => void; children: React.ReactNode; className?: string }) {
+  const dialog = useRef<HTMLElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    const trigger = document.activeElement as HTMLElement | null;
     closeButton.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
+      if (event.key !== 'Tab' || !dialog.current) return;
+      const focusable = Array.from(dialog.current.querySelectorAll<HTMLElement>('button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])')).filter((element) => !element.hasAttribute('disabled'));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      trigger?.focus();
+    };
   }, [onClose]);
 
   return (
     <div className="overlay" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className={`dialog ${className}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <section ref={dialog} className={`dialog ${className}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <button ref={closeButton} className="dialog__close" type="button" onClick={onClose} aria-label="Close"><X size={18} /></button>
         {children}
       </section>
@@ -97,6 +114,35 @@ export function CheckoutDialog() {
 
 export function ToolDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const status = usePantryStore((state) => state.webMcpStatus);
+  const drawer = useRef<HTMLElement>(null);
+  const closeButton = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const trigger = document.activeElement as HTMLElement | null;
+    closeButton.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Tab' || !drawer.current) return;
+      const focusable = Array.from(drawer.current.querySelectorAll<HTMLElement>('button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])')).filter((element) => !element.hasAttribute('disabled'));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      trigger?.focus();
+    };
+  }, [open, onClose]);
+
   if (!open) return null;
 
   const statusCopy = {
@@ -108,10 +154,10 @@ export function ToolDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
   return (
     <div className="drawer-overlay" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <aside className="tool-drawer" role="dialog" aria-modal="true" aria-labelledby="tools-title">
+      <aside ref={drawer} className="tool-drawer" role="dialog" aria-modal="true" aria-labelledby="tools-title">
         <div className="tool-drawer__top">
           <div className="dialog-icon dialog-icon--aubergine"><PlugZap size={21} /></div>
-          <button className="dialog__close" type="button" onClick={onClose} aria-label="Close tools"><X size={18} /></button>
+          <button ref={closeButton} className="dialog__close" type="button" onClick={onClose} aria-label="Close tools"><X size={18} /></button>
         </div>
         <span className="panel-kicker">Agent interface</span>
         <h2 id="tools-title">WebMCP tool belt</h2>

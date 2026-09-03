@@ -1,4 +1,25 @@
-# PantryPilot
+<p align="center">
+  <img src="public/pantrypilot-logo.svg" alt="PantryPilot" width="360" />
+</p>
+
+<p align="center">
+  <strong>From pantry to plate, with visible agent actions.</strong>
+</p>
+
+<p align="center">
+  <a href="https://viniweireal.github.io/PantryPilot/?demo=1">Live demo</a>
+  · <a href="#the-golden-demo">Golden demo</a>
+  · <a href="#webmcp-tool-belt">WebMCP tools</a>
+  · <a href="#run-locally">Run locally</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/WebMCP-10%20tools-356B45?style=flat-square" alt="10 WebMCP tools" />
+  <img src="https://img.shields.io/badge/shopping-human%20approval-D94B34?style=flat-square" alt="Human approval required for shopping" />
+  <img src="https://img.shields.io/badge/license-MIT-5A2D45?style=flat-square" alt="MIT license" />
+</p>
+
+---
 
 PantryPilot turns ingredients already in your kitchen into a cooked dinner — with a WebMCP agent that can plan, adapt and guide every visible step.
 

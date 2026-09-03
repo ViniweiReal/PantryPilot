@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 480" role="img" aria-labelledby="title description">
+  <title id="title">PantryPilot logo</title>
+  <desc id="description">A tomato-red cooking flame with a green leaf and a golden spoon, followed by the PantryPilot wordmark.</desc>
+  <svg x="70" y="35" width="330" height="410" viewBox="270 210 600 790" aria-hidden="true">
+    <path fill="#d94b34" d="M560 250C515 390 308 480 315 690C320 920 595 1000 770 815C908 670 759 447 650 330C635 460 560 468 560 250Z"/>
+    <path fill="#356b45" d="M526 710C432 607 509 501 618 476C650 603 609 692 526 710Z"/>
+    <path d="M530 720L620 520" fill="none" stroke="#fffdf8" stroke-linecap="round" stroke-width="29"/>
+    <ellipse cx="527" cy="751" rx="41" ry="53" fill="#fffdf8"/>
+    <ellipse cx="527" cy="747" rx="29" ry="34" fill="#f0b33c"/>
+  </svg>
+  <text x="455" y="300" fill="#222019" font-family="Fraunces, Georgia, serif" font-size="220" font-weight="600" letter-spacing="-11">Pantry</text>
+  <text x="1130" y="300" fill="#d94b34" font-family="Fraunces, Georgia, serif" font-size="220" font-weight="600" letter-spacing="-11">Pilot</text>
+</svg>

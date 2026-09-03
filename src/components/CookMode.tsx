@@ -117,6 +117,22 @@ function StepTimerGuide({
   );
 }
 
+function CookingCompanion({ timerStatus }: { timerStatus?: CookingTimer['status'] }) {
+  const watching = timerStatus === 'running';
+  return (
+    <aside className={`cook-companion cook-companion--${timerStatus ?? 'ready'}`} aria-label="PantryPilot cooking companion">
+      <div className="cook-companion__mascot" aria-hidden="true">
+        <i className="cook-companion__steam cook-companion__steam--one" />
+        <i className="cook-companion__steam cook-companion__steam--two" />
+        <span className="cook-companion__hat"><ChefHat size={21} /></span>
+        <span className="cook-companion__face"><i /><i /></span>
+        <span className="cook-companion__arm">✦</span>
+      </div>
+      <span><strong>{watching ? 'I’m watching the pan' : 'Your kitchen pal is ready'}</strong><small>{watching ? 'Timer is running. I’ll keep this step in view.' : 'Start when you’re ready — the next step always waits for you.'}</small></span>
+    </aside>
+  );
+}
+
 export function CookMode() {
   const session = usePantryStore((state) => state.cookingSession);
   const timers = usePantryStore((state) => state.timers);
@@ -151,9 +167,9 @@ export function CookMode() {
   const progress = completed ? 100 : (session.currentStepIndex / recipe.steps.length) * 100;
   const timerStageComplete = !step.timerSeconds || stepTimer?.status === 'completed';
   const nextButtonLabel = stepTimer?.status === 'running'
-    ? 'Continue while timer runs'
+    ? 'Timer running'
     : stepTimer?.status === 'paused'
-      ? 'Continue without timer'
+      ? 'Timer paused'
       : stepTimer?.status === 'completed'
         ? 'Timer done — next step'
         : session.currentStepIndex === recipe.steps.length - 1
@@ -178,7 +194,7 @@ export function CookMode() {
           </div>
           <div className="ready-actions">
             <button className="button button--ghost" type="button" onClick={exitCooking}><ArrowLeft size={16} /> Back to plan</button>
-            <button className="button button--primary" type="button" onClick={resetDemo}><RotateCcw size={16} /> Reset demo</button>
+        <button className="button button--primary" type="button" onClick={() => resetDemo()}><RotateCcw size={16} /> Reset demo</button>
           </div>
         </div>
       </main>
@@ -220,11 +236,13 @@ export function CookMode() {
           <div className="rail-tip"><ChefHat size={18} /><span><strong>Chef’s note</strong>Trust your senses. Pan sizes and stovetops vary.</span></div>
         </nav>
 
-        <section className="active-step" aria-labelledby="active-step-title">
+        <section className="active-step" key={step.id} aria-labelledby="active-step-title">
           <div className="step-number"><span>Step</span><strong>{String(session.currentStepIndex + 1).padStart(2, '0')}</strong><small>of {String(recipe.steps.length).padStart(2, '0')}</small></div>
           <span className="step-eyebrow"><Sparkles size={14} /> {step.eyebrow}</span>
           <h1 id="active-step-title">{step.title}</h1>
           <p>{step.instruction}</p>
+
+          <CookingCompanion timerStatus={stepTimer?.status} />
 
           <div className="step-sequence" aria-label="How to complete this step">
             <span className="is-complete"><Check size={13} /> 1 · Read</span>
@@ -247,9 +265,14 @@ export function CookMode() {
 
           <div className="step-navigation">
             <button className="button button--ghost" type="button" disabled={session.currentStepIndex === 0} onClick={() => goToCookingStep(session.currentStepIndex - 1)}><ArrowLeft size={17} /> Previous</button>
-            <button className="button button--primary button--large" type="button" onClick={() => advanceCookingStep()}>
+            <button className="button button--primary button--large" type="button" disabled={Boolean(stepTimer && stepTimer.status !== 'completed')} onClick={() => advanceCookingStep()}>
               {nextButtonLabel} <ArrowRight size={18} />
             </button>
+            {stepTimer && stepTimer.status !== 'completed' && (
+              <button className="button button--ghost button--skip-timer" type="button" onClick={() => advanceCookingStep('you', { skipTimer: true })}>
+                Skip timer & continue <ArrowRight size={16} />
+              </button>
+            )}
           </div>
         </section>
 

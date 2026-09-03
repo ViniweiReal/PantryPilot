@@ -78,7 +78,7 @@ interface PantryPilotState {
   confirmCheckout: () => void;
   startCooking: (source?: 'you' | 'agent') => { ok: boolean; message: string };
   goToCookingStep: (index: number) => void;
-  advanceCookingStep: (source?: 'you' | 'agent') => { ok: boolean; message: string; completed?: boolean };
+  advanceCookingStep: (source?: 'you' | 'agent', options?: { skipTimer?: boolean }) => { ok: boolean; message: string; completed?: boolean };
   exitCooking: () => void;
   startTimer: (label: string, durationSeconds: number, stepId?: string | null, source?: 'you' | 'agent') => { ok: boolean; message: string; timerId?: string };
   pauseTimer: (id: string) => void;
@@ -86,7 +86,7 @@ interface PantryPilotState {
   removeTimer: (id: string) => void;
   reconcileTimers: () => void;
   dismissToast: () => void;
-  resetDemo: () => void;
+  resetDemo: (options?: { silent?: boolean }) => void;
 }
 
 const uid = (prefix: string) => `${prefix}-${typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)}`;
@@ -201,8 +201,8 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
     preferences: {
       ...state.preferences,
       ...patch,
-      servings: patch.servings ? clamp(patch.servings, 1, 8) : state.preferences.servings,
-      maxMinutes: patch.maxMinutes ? clamp(patch.maxMinutes, 10, 60) : state.preferences.maxMinutes,
+      servings: patch.servings !== undefined && Number.isFinite(patch.servings) ? clamp(Math.round(patch.servings), 1, 8) : state.preferences.servings,
+      maxMinutes: patch.maxMinutes !== undefined && Number.isFinite(patch.maxMinutes) ? clamp(Math.round(patch.maxMinutes), 10, 60) : state.preferences.maxMinutes,
     },
     revision: state.revision + 1,
   })),
@@ -296,6 +296,7 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
   },
 
   adjustServings: (servings, source = 'you') => {
+    if (!Number.isFinite(servings)) return { ok: false, message: 'Choose a serving count between 1 and 8.' };
     const nextServings = clamp(Math.round(servings), 1, 8);
     const plan = get().plan;
     if (!plan) return { ok: false, message: 'Choose a recipe before adjusting servings.' };
@@ -337,14 +338,22 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
     const state = get();
     const recipe = getPlanRecipe(state.plan);
     if (!state.plan || !recipe) return { ok: false, message: 'Choose a recipe before building a shopping list.', count: 0 };
-    const items = missingIngredients(recipe, state.plan, state.pantry)
-      .filter((candidate) => !state.shoppingItems.some((item) => item.ingredientId === candidate.ingredientId));
+    const missing = missingIngredients(recipe, state.plan, state.pantry);
+    const onListCount = missing.filter((candidate) => state.shoppingItems.some((item) => item.ingredientId === candidate.ingredientId)).length;
+    const items = missing.filter((candidate) => !state.shoppingItems.some((item) => item.ingredientId === candidate.ingredientId));
     if (!items.length) {
-      set({ toast: toast('You have everything', 'No missing ingredients to add.') });
-      return { ok: true, message: 'Everything required is already covered.', count: 0 };
+      const message = missing.length
+        ? `${missing.length} missing ingredients are already on your shopping list.`
+        : 'Everything required is already covered.';
+      set({ toast: toast(missing.length ? 'Already on your list' : 'You have everything', message) });
+      return { ok: true, message, count: 0 };
     }
     set({ pendingShoppingReview: { items, source, continueToCooking } });
-    return { ok: true, message: `${items.length} missing ingredients are ready for your review.`, count: items.length };
+    return {
+      ok: true,
+      message: onListCount ? `${items.length} missing ingredients are ready for review; ${onListCount} already on your list.` : `${items.length} missing ingredients are ready for your review.`,
+      count: items.length,
+    };
   },
 
   confirmShoppingList: () => {
@@ -369,7 +378,7 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
       activity: pushActivity(state.activity, activity(
         `Added ${review.items.length} items to the list`,
         'Reviewed and confirmed by you.',
-        review.source,
+        'you',
         'list',
       )),
       toast: toast('Shopping list updated', `${review.items.length} items added — nothing purchased.`),
@@ -462,15 +471,23 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
     };
   }),
 
-  advanceCookingStep: (source = 'you') => {
+  advanceCookingStep: (source = 'you', options = {}) => {
     const state = get();
     const session = state.cookingSession;
     const recipe = getRecipe(session?.planSnapshot.recipeId);
     if (!session || !recipe) return { ok: false, message: 'Cooking mode is not active.' };
     const currentStep = recipe.steps[session.currentStepIndex];
+    const currentTimer = Object.values(state.timers).find((timer) => timer.stepId === currentStep.id && timer.status !== 'completed');
+    if (currentTimer && !options.skipTimer) {
+      return { ok: false, message: `“${currentTimer.label}” is still ${currentTimer.status}. Wait for it to finish or skip the timer.` };
+    }
     const completedIds = Array.from(new Set([...session.completedStepIds, currentStep.id]));
     const isLast = session.currentStepIndex >= recipe.steps.length - 1;
     set((current) => ({
+      timers: currentTimer && options.skipTimer ? {
+        ...current.timers,
+        [currentTimer.id]: { ...currentTimer, status: 'completed', endsAt: null, remainingWhenPaused: 0 },
+      } : current.timers,
       cookingSession: current.cookingSession ? {
         ...current.cookingSession,
         completedStepIds: completedIds,
@@ -480,7 +497,7 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
       } : null,
       activity: pushActivity(current.activity, activity(
         isLast ? 'Dinner is ready' : `Completed ${currentStep.title}`,
-        isLast ? recipe.title : `Step ${session.currentStepIndex + 1} of ${recipe.steps.length}`,
+        options.skipTimer ? `Skipped ${currentTimer?.label ?? 'step timer'} · ${isLast ? recipe.title : `step ${session.currentStepIndex + 1} of ${recipe.steps.length}`}` : isLast ? recipe.title : `Step ${session.currentStepIndex + 1} of ${recipe.steps.length}`,
         source,
         'cook',
       )),
@@ -493,10 +510,17 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
   exitCooking: () => set({ view: 'planner' }),
 
   startTimer: (label, durationSeconds, stepId = null, source = 'you') => {
+    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+      return { ok: false, message: 'Set a timer between 1 second and 4 hours.' };
+    }
     const seconds = clamp(Math.round(durationSeconds), 1, 14_400);
-    const existing = stepId
-      ? Object.values(get().timers).find((timer) => timer.stepId === stepId && timer.status !== 'completed')
-      : undefined;
+    const normalizedLabel = label.trim().toLocaleLowerCase();
+    const existing = Object.values(get().timers).find((timer) =>
+      timer.status !== 'completed' && (
+        (stepId ? timer.stepId === stepId : false) ||
+        timer.label.trim().toLocaleLowerCase() === normalizedLabel
+      ),
+    );
     if (existing) {
       return { ok: true, message: `“${existing.label}” is already ${existing.status}.`, timerId: existing.id };
     }
@@ -569,7 +593,7 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
 
   dismissToast: () => set({ toast: null }),
 
-  resetDemo: () => set((state) => ({
+  resetDemo: (options) => set((state) => ({
     revision: state.revision + 1,
     pantry: createDefaultPantry(),
     preferences: { ...defaultPreferences },
@@ -582,7 +606,7 @@ export const usePantryStore = create<PantryPilotState>()(persist((set, get) => (
     view: 'planner',
     pendingShoppingReview: null,
     checkoutOpen: false,
-    toast: toast('Demo reset', 'Eggs, tomatoes and rice are back in the pantry.'),
+    toast: options?.silent ? null : toast('Demo reset', 'Eggs, tomatoes and rice are back in the pantry.'),
     isAgentRunning: false,
   })),
 }), {

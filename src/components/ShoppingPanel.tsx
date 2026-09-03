@@ -1,14 +1,27 @@
 import { useEffect, useState } from 'react';
-import { Braces, Check, ChevronRight, Circle, CircleAlert, ListChecks, LoaderCircle, ShoppingBag, Sparkles, Trash2, UserRoundCheck } from 'lucide-react';
+import { Braces, Check, ChevronRight, Circle, CircleAlert, ListChecks, LoaderCircle, Plus, ShieldCheck, ShoppingBag, Sparkles, Timer, Trash2, UserRoundCheck } from 'lucide-react';
 import { formatAmount } from '../domain/meal-engine';
 import { usePantryStore } from '../store/usePantryStore';
 
 function relativeTime(timestamp: number) {
+  if (!Number.isFinite(timestamp)) return 'earlier';
   const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
   if (seconds < 20) return 'just now';
   if (seconds < 60) return `${seconds}s ago`;
   const minutes = Math.floor(seconds / 60);
-  return `${minutes}m ago`;
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return 'earlier';
+}
+
+function ActivityIcon({ kind }: { kind: string }) {
+  if (kind === 'plan') return <Sparkles size={12} />;
+  if (kind === 'swap') return <Plus size={12} />;
+  if (kind === 'list') return <ListChecks size={12} />;
+  if (kind === 'timer') return <Timer size={12} />;
+  if (kind === 'cook') return <Check size={12} />;
+  return <Circle size={10} />;
 }
 
 export function ShoppingPanel() {
@@ -54,6 +67,7 @@ export function ShoppingPanel() {
         ) : (
           <>
             <div className="shopping-progress"><span><strong>{checked}</strong> of {items.length} packed</span><div><i style={{ width: `${(checked / items.length) * 100}%` }} /></div></div>
+            <div className="shopping-approval"><ShieldCheck size={14} /><span><strong>Human approval required</strong><small>Nothing is added automatically.</small></span></div>
             <ul className="shopping-list">
               {items.map((item) => (
                 <li key={item.id} className={item.checked ? 'is-checked' : ''}>
@@ -81,11 +95,12 @@ export function ShoppingPanel() {
           {trailMode === 'trace' ? <Braces size={19} /> : <ListChecks size={19} />}
         </div>
         <div className="trail-switch" role="tablist" aria-label="Live trail view">
-          <button type="button" role="tab" aria-selected={trailMode === 'trace'} className={trailMode === 'trace' ? 'is-active' : ''} onClick={() => setTrailMode('trace')}>Tool calls <span>{toolTrace.length}</span></button>
-          <button type="button" role="tab" aria-selected={trailMode === 'changes'} className={trailMode === 'changes' ? 'is-active' : ''} onClick={() => setTrailMode('changes')}>Changes</button>
+          <button id="trace-tab" type="button" role="tab" aria-selected={trailMode === 'trace'} aria-controls="trace-panel" className={trailMode === 'trace' ? 'is-active' : ''} onClick={() => setTrailMode('trace')}>Tool calls <span>{toolTrace.length}</span></button>
+          <button id="changes-tab" type="button" role="tab" aria-selected={trailMode === 'changes'} aria-controls="changes-panel" className={trailMode === 'changes' ? 'is-active' : ''} onClick={() => setTrailMode('changes')}>Changes</button>
         </div>
         {trailMode === 'trace' ? (
-          toolTrace.length ? (
+          <div id="trace-panel" role="tabpanel" aria-labelledby="trace-tab">
+          {toolTrace.length ? (
             <ol className="tool-trace-list">
               {toolTrace.slice(0, 5).map((event) => (
                 <li key={event.id} className={`tool-trace-item tool-trace-item--${event.status}`}>
@@ -101,12 +116,13 @@ export function ShoppingPanel() {
             </ol>
           ) : (
             <div className="tool-trace-empty"><Braces size={20} /><strong>No calls yet</strong><p>Open the demo guide, copy the prompt and watch every WebMCP action appear here.</p></div>
-          )
+          )}
+          </div>
         ) : (
-          <ol className="activity-list">
-            {activity.slice(0, 5).map((event, index) => (
+          <ol id="changes-panel" role="tabpanel" aria-labelledby="changes-tab" className="activity-list">
+            {activity.slice(0, 5).map((event) => (
               <li key={event.id}>
-                <span className={`activity-dot activity-dot--${event.source}`}>{event.source === 'agent' ? 'AI' : index === 0 ? <Check size={12} /> : ''}</span>
+                <span className={`activity-dot activity-dot--${event.source}`} aria-hidden="true"><ActivityIcon kind={event.kind} /></span>
                 <div><strong>{event.message}</strong>{event.detail && <p>{event.detail}</p>}<small>{event.source === 'agent' ? 'Agent' : event.source === 'you' ? 'You' : 'PantryPilot'} · {relativeTime(event.createdAt)}</small></div>
               </li>
             ))}
@@ -114,11 +130,6 @@ export function ShoppingPanel() {
         )}
       </section>
 
-      <blockquote className="side-quote">
-        <Sparkles size={16} />
-        <p>“Dinner plans should change as quickly as real life does.”</p>
-        <cite>PantryPilot principle no. 01</cite>
-      </blockquote>
     </aside>
   );
 }

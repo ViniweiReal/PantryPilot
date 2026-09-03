@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { usePantryStore } from '../store/usePantryStore';
-import { createWebMcpTools, TOOL_CATALOG } from './tools';
+import { createWebMcpTools, executeWebMcpTool, TOOL_CATALOG } from './tools';
 
 describe('WebMCP tool definitions', () => {
   beforeEach(() => usePantryStore.getState().resetDemo());
@@ -25,6 +25,22 @@ describe('WebMCP tool definitions', () => {
     const output = await tool.execute({ servings: 4 }, { signal: new AbortController().signal });
     expect(output).toMatchObject({ ok: true, action: 'adjust_servings' });
     expect(usePantryStore.getState().plan?.servings).toBe(4);
+  });
+
+  it('lets the in-page agent console use the same traced dispatcher', async () => {
+    const output = await executeWebMcpTool('adjust_servings', { servings: 4 });
+    expect(output).toMatchObject({ ok: true, action: 'adjust_servings' });
+    expect(usePantryStore.getState().toolTrace[0]).toMatchObject({
+      toolName: 'adjust_servings',
+      status: 'success',
+    });
+  });
+
+  it('does not mutate state for an unsupported substitution', async () => {
+    const before = JSON.stringify(usePantryStore.getState().plan);
+    const output = await executeWebMcpTool('replace_ingredient', { ingredient: 'milk', replacement: 'unobtainium' });
+    expect(output).toMatchObject({ ok: false, code: 'TOOL_FAILED' });
+    expect(JSON.stringify(usePantryStore.getState().plan)).toBe(before);
   });
 
   it('returns a recoverable structured error for invalid input', async () => {

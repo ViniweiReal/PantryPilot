@@ -25,6 +25,14 @@ export interface RecipeMatch {
   usesSoonCount: number;
 }
 
+export type IngredientAvailability = 'in pantry' | 'pantry staple' | 'optional' | 'need';
+
+export interface RecipeCoverage {
+  matchedCount: number;
+  requiredCount: number;
+  percent: number;
+}
+
 const UNIT_LABELS: Record<Unit, { one: string; many: string }> = {
   g: { one: 'g', many: 'g' },
   ml: { one: 'ml', many: 'ml' },
@@ -85,6 +93,23 @@ export function effectiveIngredients(recipe: Recipe, plan: MealPlan): EffectiveI
 
 export function pantryContains(pantry: PantryItem[], ingredientId: string) {
   return pantry.some((item) => item.ingredientId === ingredientId);
+}
+
+export function ingredientAvailability(ingredient: RecipeIngredient, pantry: PantryItem[]): IngredientAvailability {
+  if (pantryContains(pantry, ingredient.ingredientId)) return 'in pantry';
+  if (ingredient.pantryStaple) return 'pantry staple';
+  if (ingredient.optional) return 'optional';
+  return 'need';
+}
+
+export function recipeCoverage(recipe: Recipe, plan: MealPlan, pantry: PantryItem[]): RecipeCoverage {
+  const required = effectiveIngredients(recipe, plan).filter((ingredient) => !ingredient.optional && !ingredient.pantryStaple);
+  const matchedCount = required.filter((ingredient) => pantryContains(pantry, ingredient.ingredientId)).length;
+  return {
+    matchedCount,
+    requiredCount: required.length,
+    percent: required.length ? Math.round((matchedCount / required.length) * 100) : 100,
+  };
 }
 
 export function missingIngredients(recipe: Recipe, plan: MealPlan, pantry: PantryItem[]): ShoppingItem[] {
