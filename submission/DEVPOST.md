@@ -6,7 +6,7 @@ From the ingredients you already have to a cooked dinner, through visible and hu
 
 ## Links
 
-- Live app: https://viniweireal.github.io/PantryPilot/?demo=1
+- Live app: https://pantrypilot-webmcp-demo.vinni-wei.chatgpt.site/?demo=1
 - Public source: https://github.com/ViniweiReal/PantryPilot
 - Video: add the public YouTube URL before submission
 

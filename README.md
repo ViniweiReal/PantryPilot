@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://viniweireal.github.io/PantryPilot/?demo=1">Live demo</a>
+  <a href="https://pantrypilot-webmcp-demo.vinni-wei.chatgpt.site/?demo=1">Live demo</a>
   · <a href="#the-golden-demo">Golden demo</a>
   · <a href="#webmcp-tool-belt">WebMCP tools</a>
   · <a href="#run-locally">Run locally</a>
@@ -25,7 +25,9 @@ PantryPilot turns ingredients already in your kitchen into a cooked dinner — w
 
 ## Live demo
 
-**[Open PantryPilot with the jury demo guide](https://viniweireal.github.io/PantryPilot/?demo=1)**
+**[Open PantryPilot with the jury demo guide](https://pantrypilot-webmcp-demo.vinni-wei.chatgpt.site/?demo=1)**
+
+The GitHub Pages mirror remains available at [viniweireal.github.io/PantryPilot](https://viniweireal.github.io/PantryPilot/?demo=1).
 
 No sign-in is required. In a WebMCP-capable browser, open the guide, choose **Prepare demo**, copy the Golden Prompt and watch each tool call appear in the live Agent Trace. PantryPilot pauses before changing the shopping list and waits for an explicit human decision.
 
